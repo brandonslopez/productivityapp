@@ -1,0 +1,6 @@
+name: focuspartner
+services:
+  web:
+    project: .
+    language: ts
+    host: staticwebapp
