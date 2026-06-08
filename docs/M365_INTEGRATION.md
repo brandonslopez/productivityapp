@@ -43,22 +43,26 @@ Calendar sync would require delegated Graph scopes:
 
 Calendar write should only be used after explicit user approval.
 
+## Current calendar workflow
+
+1. User creates a todo.
+2. App suggests a local focus block before the due date.
+3. User selects a suggested time.
+4. App downloads an `.ics` calendar file.
+5. User imports or opens the file in Outlook or another calendar.
+
 ## Future calendar workflow
 
-1. User creates a task from a recap.
+1. User creates a task.
 2. App suggests a time block.
 3. User reviews the title, duration, and date.
 4. User approves.
 5. Backend calls Microsoft Graph to create an Outlook event.
 6. App links the calendar block back to the task.
 
-## Future recap workflow
-
-The safe first version uses paste/import. A future version can explore Graph-based meeting artifact access if tenant permissions allow it.
-
 ## Data handling
 
-- Meeting recaps can contain sensitive partner information.
-- Do not send recap content to AI services without clear user approval.
+- Todos can contain sensitive stakeholder information.
+- Do not send todo content to AI services without clear user approval.
 - Keep tenant data isolated per signed-in user.
 - Use least-privilege Graph scopes.

@@ -1,15 +1,15 @@
-# FocusPartner
+# FocusPlanner
 
-FocusPartner is a private, responsive web app for product managers who work with partners and stakeholders. It turns meeting recap follow-ups into calm, guided next actions with ADHD-friendly defaults.
+FocusPlanner is a private, responsive web app for calendar-aware todo planning. It helps you capture tasks, estimate how long they will take, track blockers, schedule focus blocks, and learn from actual time spent.
 
 ## What it does
 
-- Opens to a **Today** view with only 1-3 focus items.
-- Lets you paste Microsoft Teams or Copilot meeting recaps.
-- Extracts likely follow-up items from the recap.
-- Guides each follow-up through task-shaping questions.
-- Creates smaller subtasks, deadlines, reminders, stakeholder links, and partner context.
-- Includes an agent workspace for AI-assisted thinking, research, draft preparation, and safe approval gates.
+- Opens to a focused queue of the next tasks to work or schedule.
+- Captures todos with due date, stakeholders, status, blockers, and anticipated time.
+- Asks for actual time when a task is completed.
+- Learns locally from completed tasks to suggest duration for new work.
+- Suggests calendar focus blocks before the due date.
+- Creates downloadable `.ics` calendar blocks that can be added to Outlook or another calendar.
 - Includes Microsoft Entra sign-in wiring for Microsoft 365 integration.
 
 ## Run locally
@@ -31,7 +31,7 @@ VITE_ENTRA_TENANT_ID=consumers
 VITE_REDIRECT_URI=http://localhost:5173
 ```
 
-Use `consumers` for personal Microsoft accounts, `common` for work/school plus personal accounts, or a tenant ID for one organization. The current prototype signs in without Microsoft Graph scopes; add least-privilege Graph permissions later when calendar or meeting recap sync is ready.
+Use `consumers` for personal Microsoft accounts, `common` for work/school plus personal accounts, or a tenant ID for one organization. The current prototype creates downloadable calendar blocks without Microsoft Graph scopes; add least-privilege Graph permissions later when direct Outlook calendar sync is ready.
 
 ## Documentation
 

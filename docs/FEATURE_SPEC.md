@@ -1,107 +1,76 @@
-# FocusPartner Feature Spec
+# FocusPlanner Feature Spec
 
-## 1. Today view
+## 1. Todo capture
 
-The Today view is the home surface. It shows only the next 1-3 active tasks sorted by due date.
-
-### Requirements
-
-- Hide completed tasks.
-- Show no more than three focus tasks.
-- Show partner, stakeholder, due date, energy level, status, and subtasks.
-- Allow status changes directly from the card.
-- Allow subtask completion directly from the card.
-
-## 2. Meeting recap import
-
-The user pastes a Microsoft Teams or Copilot meeting recap into the import panel.
+The add-todo form captures the minimum information needed to schedule and finish work.
 
 ### Requirements
 
-- Extract likely follow-up lines based on common meeting recap language.
-- Preserve the raw line as context.
-- Detect simple `Owner:` and `Partner:` markers when present.
-- Do not create tasks automatically.
-- Let the user select each extracted item for guided breakdown.
+- Capture title, notes, due date, stakeholders, status, blockers, and anticipated minutes.
+- Suggest an anticipated duration from prior completed tasks.
+- Save todos locally in browser storage.
+- Keep local planning usable even when Microsoft sign-in is not configured.
 
-## 3. Guided breakdown
+## 2. Focus queue
 
-The guided breakdown turns one recap item into an actionable task.
-
-### Questions captured
-
-- What is the follow-up?
-- Which partner is it for?
-- Who owns it?
-- When is it due?
-- What does done look like?
-- What resources or people might help?
-- What energy level does this require?
-
-### Output
-
-- Task title.
-- Partner.
-- Stakeholder link.
-- Due date.
-- Reminder.
-- Context.
-- Status.
-- Suggested subtasks.
-
-## 4. Suggested subtasks
-
-The current MVP includes deterministic suggested steps. For Lighthouse resource follow-ups, the app creates:
-
-1. Use AI to find Lighthouse resources on Microsoft Learn.
-2. Reach out to Lighthouse SME.
-3. Put resources in a Word doc.
-4. Place resources in email to partner.
-
-For other follow-ups, the app creates a generic PM-friendly breakdown:
-
-1. Clarify the expected outcome and recipient.
-2. Gather the minimum useful information or resources.
-3. Create a short draft or artifact.
-4. Send for review or share with the stakeholder.
-
-## 5. Stakeholder tracking
-
-Stakeholders are lightweight context records, not a full CRM.
+The focus queue shows the next active tasks to work or schedule.
 
 ### Requirements
 
-- Store stakeholder name, organization, and role.
-- Link tasks to stakeholders.
-- Create a simple partner contact placeholder when a new partner appears.
+- Hide completed tasks from the active queue.
+- Sort by status and due date.
+- Show due date, stakeholders, anticipated time, actual time, blockers, and status.
+- Allow status changes directly from each task card.
+- Keep the visible queue small to reduce overwhelm.
 
-## 6. Agent workspace
+## 3. Actual-time learning
 
-The agent workspace describes the AI modes the app will support.
+Completed todos ask how much time the work actually took.
 
-### Modes
+### Requirements
 
-- **Think:** clarify outcomes, risks, and next visible actions.
-- **Research:** prepare Microsoft Learn searches and resource candidates.
-- **Draft:** prepare Word-doc outlines and partner emails.
-- **Prepare:** suggest Outlook time blocks and reminders.
+- Let the user record actual minutes on each task.
+- Show completed task count with actual time logged.
+- Show average actual duration.
+- Use completed tasks to suggest future durations.
+- Prefer stakeholder-matched history when possible.
 
-### Guardrail
+## 4. Calendar suggestions
 
-The agent prepares drafts and plans, but asks before sending email, scheduling meetings, changing deadlines, or contacting partners.
+The app suggests focus blocks before each task's due date.
 
-## 7. Microsoft 365 sign-in
+### Requirements
+
+- Suggest weekday work-hour slots.
+- Avoid overlapping locally scheduled tasks.
+- Respect each task's anticipated or learned duration.
+- Avoid suggesting slots after the due date.
+- Let the user assign a suggested slot to a task.
+
+## 5. Calendar block export
+
+The MVP creates downloadable calendar events instead of writing directly to Outlook.
+
+### Requirements
+
+- Generate an `.ics` file for a scheduled task.
+- Include title, start, end, notes, stakeholders, and blockers.
+- Allow re-downloading the calendar block.
+- Keep direct Outlook writeback as a future Graph integration.
+
+## 6. Microsoft sign-in
 
 The app includes Microsoft Entra sign-in wiring using MSAL.
 
 ### Current behavior
 
-- Shows a setup message until `.env.local` contains Entra app values.
-- Uses popup sign-in when configured.
-- Requests Graph scopes needed for user profile and future calendar sync.
+- Reads Vite environment variables for client ID, tenant, and redirect URI.
+- Uses redirect sign-in for browser compatibility.
+- Requests no Microsoft Graph scopes in the MVP.
+- Leaves local todo planning available without Microsoft sign-in.
 
 ### Future behavior
 
-- Create Outlook calendar time blocks after approval.
-- Read selected calendar availability.
-- Import Teams/Copilot recap content through Microsoft Graph when feasible and permissioned.
+- Read Outlook availability after explicit permission.
+- Create Outlook calendar focus blocks after user approval.
+- Store todos per signed-in user in a backend.

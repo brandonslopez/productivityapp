@@ -2,20 +2,20 @@
 
 ## Purpose
 
-The AI layer should do the thinking work around partner follow-ups while keeping the user in control of external actions.
+The AI layer should help estimate, schedule, and break down todos while keeping the user in control of external actions.
 
 ## Agent responsibilities
 
 The agent can:
 
-- Analyze meeting recap follow-up items.
+- Analyze todo descriptions, blockers, and due dates.
 - Ask clarifying questions when the task is ambiguous.
-- Propose subtasks.
+- Propose smaller steps.
 - Prepare research queries.
 - Summarize Microsoft Learn resources.
 - Suggest SMEs or stakeholder contacts.
 - Draft Word-document outlines.
-- Draft partner emails.
+- Draft stakeholder updates.
 - Suggest reminders and Outlook time blocks.
 
 ## Approval boundaries
@@ -25,7 +25,7 @@ The agent must ask before it:
 - Sends an email.
 - Schedules or changes a meeting.
 - Creates or changes an Outlook calendar event.
-- Contacts a partner, SME, or stakeholder.
+- Contacts an SME or stakeholder.
 - Changes a deadline.
 - Marks a task complete.
 
@@ -34,7 +34,7 @@ The agent must ask before it:
 | Mode | Output |
 |---|---|
 | Think | Outcome, assumptions, risks, next visible action |
-| Plan | Subtasks, order, deadline suggestions |
+| Plan | Smaller steps, order, deadline suggestions |
 | Research | Search terms, candidate sources, resource summary |
 | Draft | Word doc outline, email draft, update blurb |
 | Prepare | Calendar block suggestion, reminder, approval checklist |
@@ -45,13 +45,15 @@ The agent may prepare work products automatically, but all communication and cal
 
 ## First implementation
 
-The MVP implements a non-networked agent workspace and deterministic task breakdowns. The next implementation should add a backend AI service that receives a single recap item plus user-approved context and returns structured JSON:
+The MVP implements local deterministic time estimates and calendar suggestions. The next implementation should add a backend AI service that receives a todo plus user-approved actual-time history and returns structured JSON:
 
 ```json
 {
   "summary": "string",
   "questions": ["string"],
-  "subtasks": ["string"],
+  "smallerSteps": ["string"],
+  "estimatedMinutes": 45,
+  "calendarSuggestions": ["ISO datetime string"],
   "researchQueries": ["string"],
   "emailDraft": "string",
   "approvalRequired": ["string"]

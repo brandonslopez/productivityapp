@@ -1,59 +1,56 @@
-# FocusPartner Product Spec
+# FocusPlanner Product Spec
 
 ## Summary
 
-FocusPartner helps product managers manage partner and stakeholder commitments without creating another overwhelming task list. It is designed for ADHD-friendly execution: fewer visible choices, fast capture, guided breakdown, and clear next actions.
+FocusPlanner helps one person manage todo work without creating another overwhelming project-management system. It is designed for ADHD-friendly execution: fast capture, visible next steps, realistic time estimates, blockers, and calendar focus blocks.
 
 ## Target user
 
-Product managers who work across partners, stakeholders, SMEs, and internal teams, and who receive work from meetings, Teams/Copilot recaps, email, chats, and random thoughts.
+Product managers and knowledge workers who receive tasks from meetings, email, chats, customer asks, random thoughts, and stakeholder follow-ups, and who need help deciding when to work on each item.
 
 ## Goals
 
 1. Help the user know what to work on next.
-2. Convert vague partner asks into smaller actionable steps.
-3. Avoid missed partner or stakeholder follow-ups.
-4. Prepare stakeholder updates with less cognitive load.
-5. Reduce overwhelm by hiding nonessential work until needed.
+2. Capture enough task context to schedule the work.
+3. Track due dates, stakeholders, blockers, status, and expected effort.
+4. Learn from actual time spent so future estimates become more realistic.
+5. Turn tasks into calendar focus blocks before they are due.
 
 ## Core experience
 
-The app opens to a calm Today view with only 1-3 focus items. The user can paste a Teams/Copilot meeting recap, extract follow-up items, answer guided questions for each follow-up, and create a task with suggested subtasks, partner context, owner, deadline, reminder, and stakeholder link.
+The app opens to a calm focus queue. The user creates a todo with a due date, stakeholders, status, blockers, and anticipated time. The app suggests calendar slots, creates a downloadable `.ics` event, and asks for actual time when the work is completed. Completed tasks feed a local estimate engine.
 
 ## ADHD-friendly principles
 
-- Show fewer choices by default.
-- Prefer next visible actions over large abstract tasks.
-- Keep capture fast and forgiving.
-- Avoid auto-creating clutter from meeting recaps.
-- Use reminders and time blocks as gentle supports, not rigid schedules.
-- Separate planning from doing.
+- Show a small focus queue instead of every possible task.
+- Prefer concrete time blocks over vague intentions.
+- Keep task capture fast and forgiving.
+- Make blockers visible so stuck work does not silently disappear.
+- Separate planning, scheduling, and doing.
+- Use estimates as support, not judgment.
 
 ## MVP scope
 
 - Responsive React web app.
 - Local task persistence in browser storage.
-- Today view limited to 1-3 focus items.
-- Meeting recap paste/import workflow.
-- Follow-up extraction.
-- Guided breakdown form.
-- Suggested subtasks for Lighthouse-style resource follow-ups.
-- Stakeholder and partner links.
-- Microsoft sign-in wiring.
-- Agent workspace concept with approval guardrails.
+- Todo capture with due date, stakeholders, status, blockers, anticipated time, and actual time.
+- Local duration suggestions from completed tasks.
+- Calendar slot suggestions using simple work-hour heuristics.
+- Downloadable `.ics` calendar blocks.
+- Microsoft sign-in wiring without Graph scopes.
 
 ## Out of scope for MVP
 
 - Production database.
 - Real Microsoft Graph calendar writeback.
-- Real Copilot/Teams recap API ingestion.
+- Reading Outlook calendar availability.
 - Real AI model calls.
 - Email sending.
 - Multi-user collaboration.
 
 ## Success measures
 
-- User can paste a recap and create a task in under two minutes.
-- Today view never shows more than three focus tasks.
-- A vague follow-up becomes a task with at least three concrete subtasks.
-- External actions require approval.
+- User can create a todo in under one minute.
+- User can schedule a todo into a calendar block in one click.
+- Completed tasks can record actual minutes spent.
+- Future todo estimates improve after actual time is logged.
