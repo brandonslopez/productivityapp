@@ -341,9 +341,7 @@ function App() {
 
     try {
       await authClient.initialize()
-      const result = await authClient.loginPopup({
-        prompt: 'select_account',
-      })
+      const result = await authClient.loginPopup()
 
       if (result.account) {
         setAccount(result.account)
