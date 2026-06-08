@@ -1,5 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
-import { PublicClientApplication, type AccountInfo } from '@azure/msal-browser'
+import { useEffect, useMemo, useState, type SetStateAction } from 'react'
+import {
+  InteractionRequiredAuthError,
+  PublicClientApplication,
+  type AccountInfo,
+} from '@azure/msal-browser'
 import './App.css'
 
 type TaskStatus = 'Not started' | 'In progress' | 'Blocked' | 'Scheduled' | 'Done'
@@ -17,6 +21,8 @@ type TodoTask = {
   completedAt: string | null
   calendarStart: string | null
   calendarEnd: string | null
+  dueEventId?: string | null
+  workEventId?: string | null
   createdAt: string
 }
 
@@ -36,11 +42,43 @@ type SuggestedSlot = {
   end: Date
 }
 
+type CalendarBusyBlock = {
+  id: string
+  subject: string
+  start: Date
+  end: Date
+}
+
+type GraphCalendarEvent = {
+  id: string
+  subject?: string
+  showAs?: string
+  isCancelled?: boolean
+  start?: {
+    dateTime?: string
+  }
+  end?: {
+    dateTime?: string
+  }
+}
+
+type GraphCalendarViewResponse = {
+  value: GraphCalendarEvent[]
+  '@odata.nextLink'?: string
+}
+
+type GraphCreatedEvent = {
+  id?: string
+}
+
 const authConfig = {
   clientId: import.meta.env.VITE_ENTRA_CLIENT_ID as string | undefined,
   tenantId: (import.meta.env.VITE_ENTRA_TENANT_ID as string | undefined) || 'consumers',
   redirectUri: import.meta.env.VITE_REDIRECT_URI as string | undefined,
 }
+
+const graphScopes = ['Calendars.ReadWrite']
+const graphBaseUrl = 'https://graph.microsoft.com/v1.0'
 
 let authClient: PublicClientApplication | null | undefined
 
@@ -68,6 +106,8 @@ const initialTasks: TodoTask[] = [
     completedAt: null,
     calendarStart: null,
     calendarEnd: null,
+    dueEventId: null,
+    workEventId: null,
     createdAt: new Date().toISOString(),
   },
 ]
@@ -88,9 +128,15 @@ function useLocalStorage<T>(key: string, initialValue: T) {
     }
   })
 
-  const saveValue = (nextValue: T) => {
-    setValue(nextValue)
-    window.localStorage.setItem(key, JSON.stringify(nextValue))
+  const saveValue = (nextValue: SetStateAction<T>) => {
+    setValue((currentValue) => {
+      const resolvedValue =
+        typeof nextValue === 'function'
+          ? (nextValue as (previousValue: T) => T)(currentValue)
+          : nextValue
+      window.localStorage.setItem(key, JSON.stringify(resolvedValue))
+      return resolvedValue
+    })
   }
 
   return [value, saveValue] as const
@@ -125,6 +171,14 @@ function createAuthClient() {
 }
 
 function getAuthErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  return String(error)
+}
+
+function getGraphErrorMessage(error: unknown) {
   if (error instanceof Error) {
     return error.message
   }
@@ -240,7 +294,15 @@ function overlapsExistingTask(start: Date, end: Date, tasks: TodoTask[]) {
   })
 }
 
-function getScheduleSuggestions(task: TodoTask, tasks: TodoTask[]) {
+function overlapsBusyBlock(start: Date, end: Date, calendarBusyBlocks: CalendarBusyBlock[]) {
+  return calendarBusyBlocks.some((block) => start < block.end && end > block.start)
+}
+
+function getScheduleSuggestions(
+  task: TodoTask,
+  tasks: TodoTask[],
+  calendarBusyBlocks: CalendarBusyBlock[],
+) {
   const suggestions: SuggestedSlot[] = []
   const now = new Date()
   const dueDate = task.dueDate ? new Date(`${task.dueDate}T17:00:00`) : new Date(now)
@@ -259,7 +321,12 @@ function getScheduleSuggestions(task: TodoTask, tasks: TodoTask[]) {
       const start = combineDateAndHour(candidateDate, hour)
       const end = new Date(start.getTime() + durationMinutes * 60 * 1000)
 
-      if (start <= now || end > dueDate || overlapsExistingTask(start, end, tasks)) {
+      if (
+        start <= now ||
+        end > dueDate ||
+        overlapsExistingTask(start, end, tasks) ||
+        overlapsBusyBlock(start, end, calendarBusyBlocks)
+      ) {
         continue
       }
 
@@ -276,6 +343,28 @@ function getScheduleSuggestions(task: TodoTask, tasks: TodoTask[]) {
   }
 
   return suggestions
+}
+
+function toGraphUtcDateTime(date: Date) {
+  return date.toISOString().replace(/\.\d{3}Z$/, '')
+}
+
+function toDueEventWindow(dueDate: string) {
+  const start = new Date(`${dueDate}T16:30:00`)
+  const end = new Date(start.getTime() + 30 * 60 * 1000)
+  return { start, end }
+}
+
+function buildTaskEventBody(task: TodoTask, purpose: 'due' | 'work') {
+  return [
+    task.description,
+    task.dueDate ? `Due: ${task.dueDate}` : '',
+    task.stakeholders ? `Stakeholders: ${task.stakeholders}` : '',
+    task.blockers ? `Blockers: ${task.blockers}` : '',
+    purpose === 'work' ? 'Created by FocusPlanner as a protected focus block.' : '',
+  ]
+    .filter(Boolean)
+    .join('<br>')
 }
 
 function toIcsDate(date: Date) {
@@ -331,6 +420,9 @@ function App() {
   const [account, setAccount] = useState<AccountInfo | null>(null)
   const [authMessage, setAuthMessage] = useState('')
   const [isSigningIn, setIsSigningIn] = useState(false)
+  const [calendarBusyBlocks, setCalendarBusyBlocks] = useState<CalendarBusyBlock[]>([])
+  const [calendarMessage, setCalendarMessage] = useState('')
+  const [isSyncingCalendar, setIsSyncingCalendar] = useState(false)
 
   useEffect(() => {
     const authClient = createAuthClient()
@@ -345,8 +437,9 @@ function App() {
       const existingAccount = redirectResult?.account ?? authClient.getAllAccounts()[0]
 
       if (existingAccount) {
+        authClient.setActiveAccount(existingAccount)
         setAccount(existingAccount)
-        setAuthMessage('Signed in with Microsoft.')
+        setAuthMessage('Signed in with Microsoft Outlook calendar access.')
       }
     }
 
@@ -391,6 +484,8 @@ function App() {
       completedAt: null,
       calendarStart: null,
       calendarEnd: null,
+      dueEventId: null,
+      workEventId: null,
       createdAt: new Date().toISOString(),
     }
 
@@ -399,6 +494,12 @@ function App() {
       ...initialDraft,
       dueDate: toDateInput(new Date(Date.now() + 1000 * 60 * 60 * 24)),
     })
+
+    if (account) {
+      void createDueDateEvent(task).catch((error: unknown) => {
+        setCalendarMessage(`Could not add due-date event: ${getGraphErrorMessage(error)}`)
+      })
+    }
   }
 
   const updateTask = (taskId: string, updates: Partial<TodoTask>) => {
@@ -422,7 +523,170 @@ function App() {
     )
   }
 
-  const scheduleTask = (task: TodoTask, slot: SuggestedSlot) => {
+  const getGraphAccessToken = async () => {
+    const authClient = createAuthClient()
+
+    if (!authClient || !account) {
+      throw new Error('Connect Microsoft 365 before syncing with Outlook calendar.')
+    }
+
+    await authClient.initialize()
+
+    try {
+      const tokenResult = await authClient.acquireTokenSilent({
+        account,
+        scopes: graphScopes,
+      })
+      return tokenResult.accessToken
+    } catch (error) {
+      if (error instanceof InteractionRequiredAuthError) {
+        await authClient.acquireTokenRedirect({
+          account,
+          scopes: graphScopes,
+        })
+      }
+
+      throw error
+    }
+  }
+
+  const graphRequest = async <T,>(pathOrUrl: string, options: RequestInit = {}) => {
+    const accessToken = await getGraphAccessToken()
+    const url = pathOrUrl.startsWith('https://') ? pathOrUrl : `${graphBaseUrl}${pathOrUrl}`
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        Prefer: 'outlook.timezone="UTC"',
+        ...options.headers,
+      },
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Microsoft Graph request failed (${response.status}): ${errorText}`)
+    }
+
+    return (await response.json()) as T
+  }
+
+  const refreshCalendar = async () => {
+    if (!account) {
+      setCalendarMessage('Connect Microsoft 365 to read your Outlook calendar.')
+      return
+    }
+
+    setIsSyncingCalendar(true)
+    setCalendarMessage('Reading your Outlook calendar...')
+
+    try {
+      const now = new Date()
+      const rangeEnd = new Date(now)
+      rangeEnd.setDate(now.getDate() + 14)
+      const query = new URLSearchParams({
+        startDateTime: now.toISOString(),
+        endDateTime: rangeEnd.toISOString(),
+        $select: 'id,subject,start,end,showAs,isCancelled',
+        $top: '100',
+      })
+      let nextUrl: string | undefined = `/me/calendarView?${query.toString()}`
+      const busyBlocks: CalendarBusyBlock[] = []
+
+      while (nextUrl) {
+        const response: GraphCalendarViewResponse = await graphRequest(nextUrl)
+        response.value.forEach((event) => {
+          if (
+            event.isCancelled ||
+            event.showAs === 'free' ||
+            !event.id ||
+            !event.start?.dateTime ||
+            !event.end?.dateTime
+          ) {
+            return
+          }
+
+          busyBlocks.push({
+            id: event.id,
+            subject: event.subject || 'Busy',
+            start: new Date(`${event.start.dateTime}Z`),
+            end: new Date(`${event.end.dateTime}Z`),
+          })
+        })
+        nextUrl = response['@odata.nextLink']
+      }
+
+      setCalendarBusyBlocks(busyBlocks)
+      setCalendarMessage(`Outlook calendar connected. Found ${busyBlocks.length} busy blocks.`)
+    } catch (error: unknown) {
+      setCalendarMessage(`Could not read Outlook calendar: ${getGraphErrorMessage(error)}`)
+    } finally {
+      setIsSyncingCalendar(false)
+    }
+  }
+
+  useEffect(() => {
+    if (account) {
+      void refreshCalendar()
+    }
+  }, [account])
+
+  const createCalendarEvent = async (
+    task: TodoTask,
+    subject: string,
+    start: Date,
+    end: Date,
+    purpose: 'due' | 'work',
+  ) => {
+    const event = await graphRequest<GraphCreatedEvent>('/me/events', {
+      method: 'POST',
+      body: JSON.stringify({
+        subject,
+        body: {
+          contentType: 'HTML',
+          content: buildTaskEventBody(task, purpose),
+        },
+        start: {
+          dateTime: toGraphUtcDateTime(start),
+          timeZone: 'UTC',
+        },
+        end: {
+          dateTime: toGraphUtcDateTime(end),
+          timeZone: 'UTC',
+        },
+        isReminderOn: true,
+        reminderMinutesBeforeStart: purpose === 'due' ? 60 : 15,
+        categories: ['FocusPlanner'],
+      }),
+    })
+
+    if (!event.id) {
+      throw new Error('Outlook created an event without returning an event ID.')
+    }
+
+    return event.id
+  }
+
+  const createDueDateEvent = async (task: TodoTask) => {
+    if (!task.dueDate || task.dueEventId) {
+      return null
+    }
+
+    setCalendarMessage(`Adding due-date reminder for "${task.title}" to Outlook...`)
+
+    const { start, end } = toDueEventWindow(task.dueDate)
+    const dueEventId = await createCalendarEvent(task, `Due: ${task.title}`, start, end, 'due')
+    setTasks((currentTasks) =>
+      currentTasks.map((currentTask) =>
+        currentTask.id === task.id ? { ...currentTask, dueEventId } : currentTask,
+      ),
+    )
+    setCalendarMessage(`Added due-date reminder for "${task.title}" to Outlook.`)
+    await refreshCalendar()
+    return dueEventId
+  }
+
+  const scheduleTask = async (task: TodoTask, slot: SuggestedSlot) => {
     const scheduledTask = {
       ...task,
       status: 'Scheduled' as TaskStatus,
@@ -430,8 +694,39 @@ function App() {
       calendarEnd: slot.end.toISOString(),
     }
 
-    setTasks(tasks.map((currentTask) => (currentTask.id === task.id ? scheduledTask : currentTask)))
-    downloadCalendarBlock(scheduledTask)
+    if (!account) {
+      setTasks(tasks.map((currentTask) => (currentTask.id === task.id ? scheduledTask : currentTask)))
+      downloadCalendarBlock(scheduledTask)
+      setCalendarMessage('Saved locally and downloaded an .ics file. Connect Microsoft 365 to write directly to Outlook.')
+      return
+    }
+
+    setIsSyncingCalendar(true)
+    setCalendarMessage(`Adding work block for "${task.title}" to Outlook...`)
+
+    try {
+      const workEventId = await createCalendarEvent(
+        scheduledTask,
+        `Focus: ${task.title}`,
+        slot.start,
+        slot.end,
+        'work',
+      )
+      const dueEventId = task.dueEventId ?? (await createDueDateEvent(scheduledTask))
+      const syncedTask = {
+        ...scheduledTask,
+        dueEventId,
+        workEventId,
+      }
+
+      setTasks(tasks.map((currentTask) => (currentTask.id === task.id ? syncedTask : currentTask)))
+      setCalendarMessage(`Added due-date reminder and work block for "${task.title}" to Outlook.`)
+      await refreshCalendar()
+    } catch (error: unknown) {
+      setCalendarMessage(`Could not schedule Outlook event: ${getGraphErrorMessage(error)}`)
+    } finally {
+      setIsSyncingCalendar(false)
+    }
   }
 
   const signIn = async () => {
@@ -452,7 +747,7 @@ function App() {
 
     try {
       await authClient.initialize()
-      await authClient.loginRedirect()
+      await authClient.loginRedirect({ scopes: graphScopes })
     } catch (error: unknown) {
       setAuthMessage(`Microsoft sign-in failed: ${getAuthErrorMessage(error)}`)
       setIsSigningIn(false)
@@ -476,13 +771,24 @@ function App() {
             {isSigningIn
               ? 'Connecting...'
               : account
-                ? 'Microsoft connected'
-                : 'Connect Microsoft 365'}
+                ? 'Outlook calendar connected'
+                : 'Connect Outlook calendar'}
           </button>
+          {account ? (
+            <button
+              className="secondary-button"
+              disabled={isSyncingCalendar}
+              onClick={() => void refreshCalendar()}
+              type="button"
+            >
+              {isSyncingCalendar ? 'Syncing calendar...' : 'Refresh calendar'}
+            </button>
+          ) : null}
           <p>
             {authMessage ||
-              'Local mode creates downloadable calendar blocks now. Microsoft sign-in can power Outlook sync later.'}
+              'Connect Microsoft 365 so FocusPlanner can read busy times and add Outlook calendar events.'}
           </p>
+          <p>{calendarMessage || 'Local mode still creates downloadable calendar blocks.'}</p>
         </section>
       </header>
 
@@ -598,10 +904,14 @@ function App() {
               <strong>{formatDuration(averageActualMinutes)}</strong>
               <span>Average actual time</span>
             </article>
+            <article>
+              <strong>{calendarBusyBlocks.length}</strong>
+              <span>Busy Outlook blocks found</span>
+            </article>
           </div>
           <p className="guardrail">
-            The current estimate engine learns locally from your completed tasks. A future AI
-            service can use the same actual-time history to personalize estimates further.
+            The estimate engine learns locally from completed tasks. When Outlook is connected,
+            schedule suggestions avoid calendar events that already make you busy.
           </p>
         </section>
 
@@ -615,7 +925,7 @@ function App() {
           </div>
           <div className="task-stack">
             {activeTasks.map((task) => {
-              const suggestions = getScheduleSuggestions(task, tasks)
+              const suggestions = getScheduleSuggestions(task, tasks, calendarBusyBlocks)
               return (
                 <article className="task-card" key={task.id}>
                   <div className="task-topline">
@@ -703,7 +1013,12 @@ function App() {
                       <strong>Suggested calendar times</strong>
                       {suggestions.length ? (
                         suggestions.map((slot) => (
-                          <button key={slot.start.toISOString()} onClick={() => scheduleTask(task, slot)} type="button">
+                          <button
+                            disabled={isSyncingCalendar}
+                            key={slot.start.toISOString()}
+                            onClick={() => void scheduleTask(task, slot)}
+                            type="button"
+                          >
                             {slot.label}
                           </button>
                         ))

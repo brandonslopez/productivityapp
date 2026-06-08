@@ -8,9 +8,9 @@ FocusPlanner is a private, responsive web app for calendar-aware todo planning. 
 - Captures todos with due date, stakeholders, status, blockers, and anticipated time.
 - Asks for actual time when a task is completed.
 - Learns locally from completed tasks to suggest duration for new work.
-- Suggests calendar focus blocks before the due date.
-- Creates downloadable `.ics` calendar blocks that can be added to Outlook or another calendar.
-- Includes Microsoft Entra sign-in wiring for Microsoft 365 integration.
+- Connects to Outlook calendar to avoid busy times when suggesting focus blocks.
+- Creates Outlook events for due-date reminders and scheduled focus time.
+- Falls back to downloadable `.ics` calendar blocks when Outlook is not connected.
 
 ## Run locally
 
@@ -31,7 +31,7 @@ VITE_ENTRA_TENANT_ID=consumers
 VITE_REDIRECT_URI=http://localhost:5173
 ```
 
-Use `consumers` for personal Microsoft accounts, `common` for work/school plus personal accounts, or a tenant ID for one organization. The current prototype creates downloadable calendar blocks without Microsoft Graph scopes; add least-privilege Graph permissions later when direct Outlook calendar sync is ready.
+Use `consumers` for personal Microsoft accounts, `common` for work/school plus personal accounts, or a tenant ID for one organization. Direct Outlook sync requires delegated Microsoft Graph `Calendars.ReadWrite` consent so FocusPlanner can read busy blocks and create calendar events.
 
 ## Documentation
 

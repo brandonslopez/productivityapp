@@ -2,7 +2,7 @@
 
 ## Current implementation
 
-The app includes Microsoft Entra sign-in wiring with MSAL Browser. It reads configuration from Vite environment variables:
+The app includes Microsoft Entra sign-in wiring with MSAL Browser and direct Outlook calendar sync through Microsoft Graph. It reads configuration from Vite environment variables:
 
 - `VITE_ENTRA_CLIENT_ID`
 - `VITE_ENTRA_TENANT_ID`
@@ -30,35 +30,21 @@ https://<your-static-web-app-hostname>
 
 ## Sign-in and Graph scopes
 
-The MVP sign-in flow does not request Microsoft Graph scopes. It only signs the user in with Entra ID so it can avoid tenant consent blockers while the app is still a personal prototype.
+The sign-in flow requests delegated Microsoft Graph calendar access:
 
-Future Graph integrations should add least-privilege delegated scopes only when the feature is ready. A basic profile read would require:
-
-- `User.Read`
-
-Calendar sync would require delegated Graph scopes:
-
-- `Calendars.Read`
 - `Calendars.ReadWrite`
 
-Calendar write should only be used after explicit user approval.
+`Calendars.ReadWrite` is required because the app reads upcoming calendar events to avoid busy time and creates Outlook events for due-date reminders and selected focus blocks.
 
 ## Current calendar workflow
 
 1. User creates a todo.
-2. App suggests a local focus block before the due date.
-3. User selects a suggested time.
-4. App downloads an `.ics` calendar file.
-5. User imports or opens the file in Outlook or another calendar.
-
-## Future calendar workflow
-
-1. User creates a task.
-2. App suggests a time block.
-3. User reviews the title, duration, and date.
-4. User approves.
-5. Backend calls Microsoft Graph to create an Outlook event.
-6. App links the calendar block back to the task.
+2. If Outlook is connected, the app adds a due-date reminder event.
+3. The app reads the next 14 days of Outlook calendar events and treats them as busy blocks.
+4. The app suggests focus blocks before the due date that do not overlap existing todos or Outlook busy blocks.
+5. User selects a suggested time.
+6. The app creates a protected Outlook focus event and links the event ID back to the todo.
+7. If Outlook is not connected, the app still downloads an `.ics` calendar file as a manual fallback.
 
 ## Data handling
 
