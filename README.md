@@ -29,11 +29,11 @@ Create a `.env.local` file from `.env.example` and fill in your Microsoft Entra 
 
 ```bash
 VITE_ENTRA_CLIENT_ID=your-client-id
-VITE_ENTRA_TENANT_ID=consumers
+VITE_ENTRA_TENANT_ID=common
 VITE_REDIRECT_URI=http://localhost:5173
 ```
 
-Use `consumers` for personal Microsoft accounts, `common` for work/school plus personal accounts, or a tenant ID for one organization. Direct Outlook sync requires delegated Microsoft Graph `Calendars.ReadWrite` consent so FocusPlanner can read busy blocks and create calendar events.
+Use `common` for both work/school and personal Microsoft accounts, `consumers` for personal Microsoft accounts only, or a tenant ID for one organization. In the Microsoft Entra app registration, set **Supported account types** to **Accounts in any organizational directory and personal Microsoft accounts**. Direct Outlook sync requires delegated Microsoft Graph `Calendars.ReadWrite` consent so FocusPlanner can read busy blocks and create calendar events; some work tenants require admin consent for that permission.
 
 ## Documentation
 

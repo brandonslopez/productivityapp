@@ -8,11 +8,11 @@ The app includes Microsoft Entra sign-in wiring with MSAL Browser and direct Out
 - `VITE_ENTRA_TENANT_ID`
 - `VITE_REDIRECT_URI`
 
-Use `consumers` for personal Microsoft accounts, `common` for work/school plus personal accounts, or a tenant ID for a single organization.
+Use `common` for both work/school and personal Microsoft accounts, `consumers` for personal Microsoft accounts only, or a tenant ID for a single organization.
 
 ## Required app registration
 
-Create a Microsoft Entra app registration for a single-page application.
+Create a Microsoft Entra app registration for a single-page application. To allow both personal and work/school accounts, set **Supported account types** to **Accounts in any organizational directory and personal Microsoft accounts**.
 
 ### Redirect URI
 
@@ -35,6 +35,8 @@ The sign-in flow requests delegated Microsoft Graph calendar access:
 - `Calendars.ReadWrite`
 
 `Calendars.ReadWrite` is required because the app reads upcoming calendar events to avoid busy time and creates Outlook events for due-date reminders and selected focus blocks.
+
+Some work tenants block user consent for calendar permissions. If sign-in shows an admin approval prompt, a tenant admin must grant consent for `Calendars.ReadWrite` before the app can access that work calendar.
 
 ## Current calendar workflow
 

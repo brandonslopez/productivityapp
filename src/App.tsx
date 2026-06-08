@@ -81,7 +81,7 @@ type GraphCreatedEvent = {
 
 const authConfig = {
   clientId: import.meta.env.VITE_ENTRA_CLIENT_ID as string | undefined,
-  tenantId: (import.meta.env.VITE_ENTRA_TENANT_ID as string | undefined) || 'consumers',
+  tenantId: (import.meta.env.VITE_ENTRA_TENANT_ID as string | undefined) || 'common',
   redirectUri: import.meta.env.VITE_REDIRECT_URI as string | undefined,
 }
 
