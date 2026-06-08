@@ -10,16 +10,22 @@ Browser
   |-- React UI
   |-- Local storage persistence
   |-- MSAL browser sign-in
+  |-- Microsoft Graph calendar calls
   |-- Downloadable .ics calendar blocks
-  |-- Future Microsoft Graph calls
+  |
+Azure Static Web Apps API
+  |
+  |-- /api/task-assistant
+  |-- Azure AI task estimate and subtask split
 ```
 
 ## Key modules
 
 | Area | Location | Purpose |
 |---|---|---|
-| App shell | `src/App.tsx` | Todo state, estimate learning, calendar suggestions, Microsoft sign-in |
+| App shell | `src/App.tsx` | Todo state, estimate learning, Azure AI suggestions, calendar suggestions, Microsoft sign-in |
 | Styling | `src/App.css`, `src/index.css` | Responsive ADHD-friendly UI |
+| Task assistant API | `api/task-assistant/index.js` | Server-side Azure AI request for duration estimate and smaller steps |
 | Static Web Apps config | `public/staticwebapp.config.json` | SPA fallback and basic security headers |
 | Environment template | `.env.example` | Microsoft Entra configuration |
 
@@ -39,6 +45,8 @@ Browser
 - `completedAt`
 - `calendarStart`
 - `calendarEnd`
+- `subtasks`
+- `aiEstimateRationale`
 - `createdAt`
 
 ## Persistence
@@ -64,4 +72,5 @@ Azure Static Web Apps
 - Use public-client MSAL auth code with PKCE for SPA sign-in.
 - Keep Graph scopes minimal and incremental.
 - Require explicit user approval for calendar writes.
-- Store future AI prompts and tool outputs as user-private data.
+- Keep Azure AI keys in Static Web Apps API settings, never in Vite environment variables.
+- Treat AI prompts and outputs as user-private data.

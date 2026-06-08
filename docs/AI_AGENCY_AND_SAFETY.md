@@ -43,16 +43,41 @@ The agent must ask before it:
 
 The agent may prepare work products automatically, but all communication and calendar actions require explicit approval.
 
-## First implementation
+## Current implementation
 
-The MVP implements local deterministic time estimates and calendar suggestions. The next implementation should add a backend AI service that receives a todo plus user-approved actual-time history and returns structured JSON:
+The app keeps local deterministic time estimates and calendar suggestions, then optionally calls a server-side Azure Static Web Apps API endpoint. The endpoint sends the draft todo plus recent completed-task timing examples to Azure AI and returns structured JSON:
+
+```json
+{
+  "estimatedMinutes": 45,
+  "subtasks": ["string"],
+  "rationale": "string"
+}
+```
+
+The frontend applies the estimate to the anticipated time field and writes the suggested smaller steps into an editable draft field. The user can edit or delete those suggestions before saving the todo.
+
+## Server-side AI boundary
+
+Azure AI credentials must stay in Static Web Apps API application settings:
+
+```text
+AZURE_AI_ENDPOINT
+AZURE_AI_API_KEY
+AZURE_AI_DEPLOYMENT
+AZURE_AI_API_VERSION
+```
+
+Do not put Azure AI keys in Vite variables because those values are bundled into browser JavaScript.
+
+## Future structured output
+
+Future modes can extend the API response after user approval:
 
 ```json
 {
   "summary": "string",
   "questions": ["string"],
-  "smallerSteps": ["string"],
-  "estimatedMinutes": 45,
   "calendarSuggestions": ["ISO datetime string"],
   "researchQueries": ["string"],
   "emailDraft": "string",

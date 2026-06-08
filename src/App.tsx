@@ -8,6 +8,12 @@ import './App.css'
 
 type TaskStatus = 'Not started' | 'In progress' | 'Blocked' | 'Scheduled' | 'Done'
 
+type TaskStep = {
+  id: string
+  title: string
+  done: boolean
+}
+
 type TodoTask = {
   id: string
   title: string
@@ -23,6 +29,8 @@ type TodoTask = {
   calendarEnd: string | null
   dueEventId?: string | null
   workEventId?: string | null
+  subtasks?: TaskStep[]
+  aiEstimateRationale?: string | null
   createdAt: string
 }
 
@@ -34,6 +42,13 @@ type TodoDraft = {
   status: TaskStatus
   blockers: string
   anticipatedMinutes: string
+  subtasks: string
+}
+
+type AiTaskSuggestion = {
+  estimatedMinutes: number
+  subtasks: string[]
+  rationale: string
 }
 
 type SuggestedSlot = {
@@ -98,6 +113,7 @@ const initialDraft: TodoDraft = {
   status: 'Not started',
   blockers: '',
   anticipatedMinutes: '',
+  subtasks: '',
 }
 
 const initialTasks: TodoTask[] = [
@@ -116,6 +132,12 @@ const initialTasks: TodoTask[] = [
     calendarEnd: null,
     dueEventId: null,
     workEventId: null,
+    subtasks: [
+      { id: 'step-sample-review', title: 'Review current commitments', done: false },
+      { id: 'step-sample-prioritize', title: 'Pick the top three focus blocks', done: false },
+      { id: 'step-sample-schedule', title: 'Schedule protected calendar time', done: false },
+    ],
+    aiEstimateRationale: 'Sample ADHD-friendly breakdown.',
     createdAt: new Date().toISOString(),
   },
 ]
@@ -212,6 +234,22 @@ function parseMinutes(value: string) {
   return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : 0
 }
 
+function parseSubtasks(value: string) {
+  return value
+    .split('\n')
+    .map((line) => line.trim().replace(/^[-*]\s*/, ''))
+    .filter(Boolean)
+    .map((title) => ({
+      id: createId('step'),
+      title,
+      done: false,
+    }))
+}
+
+function formatSubtasksForDraft(subtasks: string[]) {
+  return subtasks.map((subtask) => `- ${subtask}`).join('\n')
+}
+
 function formatDuration(minutes: number | null) {
   if (!minutes) {
     return 'Not logged'
@@ -247,10 +285,6 @@ function formatTimeRange(start: Date, end: Date) {
     minute: '2-digit',
   })
   return `${formatter.format(start)} - ${formatter.format(end)}`
-}
-
-function toDateInput(date: Date) {
-  return date.toISOString().slice(0, 10)
 }
 
 function startOfDay(date: Date) {
@@ -532,6 +566,9 @@ function App() {
   const [calendarBusyBlocks, setCalendarBusyBlocks] = useState<CalendarBusyBlock[]>([])
   const [calendarMessage, setCalendarMessage] = useState('')
   const [isSyncingCalendar, setIsSyncingCalendar] = useState(false)
+  const [aiSuggestion, setAiSuggestion] = useState<AiTaskSuggestion | null>(null)
+  const [aiMessage, setAiMessage] = useState('')
+  const [isSuggestingWithAi, setIsSuggestingWithAi] = useState(false)
 
   useEffect(() => {
     const authClient = createAuthClient()
@@ -607,14 +644,18 @@ function App() {
       calendarEnd: null,
       dueEventId: null,
       workEventId: null,
+      subtasks: parseSubtasks(draft.subtasks),
+      aiEstimateRationale: aiSuggestion?.rationale ?? null,
       createdAt: new Date().toISOString(),
     }
 
     setTasks([task, ...tasks])
     setDraft({
       ...initialDraft,
-      dueDate: toDateInput(new Date(Date.now() + 1000 * 60 * 60 * 24)),
+      dueDate: initialDraft.dueDate,
     })
+    setAiSuggestion(null)
+    setAiMessage('')
 
     if (account) {
       void createDueDateEvent(task).catch((error: unknown) => {
@@ -644,6 +685,80 @@ function App() {
     )
   }
 
+  const updateTaskStep = (taskId: string, stepId: string, done: boolean) => {
+    setTasks(
+      tasks.map((task) => {
+        if (task.id !== taskId) {
+          return task
+        }
+
+        return {
+          ...task,
+          subtasks: (task.subtasks ?? []).map((subtask) =>
+            subtask.id === stepId ? { ...subtask, done } : subtask,
+          ),
+        }
+      }),
+    )
+  }
+
+  const requestAiSuggestion = async () => {
+    if (!draft.title.trim() && !draft.description.trim()) {
+      setAiMessage('Add a todo title or notes before asking Azure AI.')
+      return
+    }
+
+    setIsSuggestingWithAi(true)
+    setAiMessage('Asking Azure AI for an estimate and smaller steps...')
+
+    try {
+      const response = await fetch('/api/task-assistant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          task: {
+            title: draft.title.trim(),
+            description: draft.description.trim(),
+            dueDate: draft.dueDate,
+            stakeholders: draft.stakeholders.trim(),
+            blockers: draft.blockers.trim(),
+          },
+          completedTasks: tasks
+            .filter((task) => task.actualMinutes && task.actualMinutes > 0)
+            .slice(0, 12)
+            .map((task) => ({
+              title: task.title,
+              description: task.description,
+              stakeholders: task.stakeholders,
+              anticipatedMinutes: task.anticipatedMinutes,
+              actualMinutes: task.actualMinutes,
+            })),
+        }),
+      })
+
+      const responseBody = (await response.json()) as { error?: string } | AiTaskSuggestion
+
+      if (!response.ok) {
+        throw new Error('error' in responseBody && responseBody.error ? responseBody.error : 'Azure AI request failed.')
+      }
+
+      const suggestion = responseBody as AiTaskSuggestion
+      setAiSuggestion(suggestion)
+      setDraft((currentDraft) => ({
+        ...currentDraft,
+        anticipatedMinutes: String(suggestion.estimatedMinutes),
+        subtasks: formatSubtasksForDraft(suggestion.subtasks),
+      }))
+      setAiMessage('Azure AI added an estimate and smaller steps. You can edit them before saving.')
+    } catch (error: unknown) {
+      setAiMessage(`Could not get Azure AI suggestion: ${getGraphErrorMessage(error)}`)
+    } finally {
+      setIsSuggestingWithAi(false)
+    }
+  }
+
   const getGraphAccessToken = async () => {
     const authClient = createAuthClient()
 
@@ -668,6 +783,7 @@ function App() {
       if (needsInteractiveToken(error)) {
         throw new Error(
           'Microsoft needs an interactive Outlook consent step. Click Connect Outlook calendar again, then return to the app.',
+          { cause: error },
         )
       }
 
@@ -751,9 +867,17 @@ function App() {
   }
 
   useEffect(() => {
-    if (account) {
-      void refreshCalendar()
+    if (!account) {
+      return
     }
+
+    const timeoutId = window.setTimeout(() => {
+      void refreshCalendar()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+    // refreshCalendar intentionally stays outside the dependency list because it is recreated with request state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account])
 
   const createCalendarEvent = async (
@@ -1082,6 +1206,37 @@ function App() {
                 value={draft.blockers}
               />
             </label>
+            <div className="ai-assistant-card">
+              <div>
+                <strong>Azure AI estimate and breakdown</strong>
+                <p>
+                  Send the title, notes, blockers, and your completed-task timing examples to Azure AI
+                  for a duration estimate and ADHD-friendly next steps.
+                </p>
+              </div>
+              <button
+                className="secondary-button"
+                disabled={isSuggestingWithAi}
+                onClick={() => void requestAiSuggestion()}
+                type="button"
+              >
+                {isSuggestingWithAi ? 'Asking Azure AI...' : 'Ask Azure AI to estimate and split'}
+              </button>
+              {aiMessage ? <p className="guardrail">{aiMessage}</p> : null}
+              {aiSuggestion ? (
+                <p className="ai-rationale">
+                  <strong>Why:</strong> {aiSuggestion.rationale}
+                </p>
+              ) : null}
+            </div>
+            <label>
+              Smaller steps
+              <textarea
+                onChange={(event) => setDraft({ ...draft, subtasks: event.target.value })}
+                placeholder="One step per line. Azure AI can draft these for you."
+                value={draft.subtasks}
+              />
+            </label>
             <button className="wide-button" type="submit">
               Add todo and suggest calendar times
             </button>
@@ -1152,6 +1307,28 @@ function App() {
                   </div>
                   <h3>{task.title}</h3>
                   <p>{task.description || 'No notes yet.'}</p>
+                  {task.subtasks?.length ? (
+                    <div className="subtask-list">
+                      <strong>Smaller steps</strong>
+                      {task.aiEstimateRationale ? <p>{task.aiEstimateRationale}</p> : null}
+                      <ul>
+                        {task.subtasks.map((subtask) => (
+                          <li key={subtask.id}>
+                            <label>
+                              <input
+                                checked={subtask.done}
+                                onChange={(event) =>
+                                  updateTaskStep(task.id, subtask.id, event.target.checked)
+                                }
+                                type="checkbox"
+                              />
+                              <span>{subtask.title}</span>
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                   <dl className="task-details">
                     <div>
                       <dt>Due</dt>

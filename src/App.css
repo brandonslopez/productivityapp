@@ -258,6 +258,51 @@ textarea {
   gap: 10px;
 }
 
+.ai-assistant-card,
+.subtask-list {
+  background: #eef8f8;
+  border: 1px solid rgba(45, 106, 115, 0.14);
+  border-radius: 18px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.ai-assistant-card p,
+.subtask-list p {
+  color: #536b76;
+  margin: 4px 0 0;
+}
+
+.ai-rationale {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.subtask-list ul {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.subtask-list label {
+  align-items: flex-start;
+  display: flex;
+  gap: 8px;
+}
+
+.subtask-list input {
+  margin-top: 3px;
+}
+
+.subtask-list input:checked + span {
+  color: #6c7d86;
+  text-decoration: line-through;
+}
+
 .schedule-list {
   background: #eef8f8;
   border-radius: 16px;
