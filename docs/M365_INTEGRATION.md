@@ -8,6 +8,8 @@ The app includes Microsoft Entra sign-in wiring with MSAL Browser. It reads conf
 - `VITE_ENTRA_TENANT_ID`
 - `VITE_REDIRECT_URI`
 
+Use `consumers` for personal Microsoft accounts, `common` for work/school plus personal accounts, or a tenant ID for a single organization.
+
 ## Required app registration
 
 Create a Microsoft Entra app registration for a single-page application.

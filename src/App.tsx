@@ -55,7 +55,7 @@ type GuideDraft = {
 
 const authConfig = {
   clientId: import.meta.env.VITE_ENTRA_CLIENT_ID as string | undefined,
-  tenantId: import.meta.env.VITE_ENTRA_TENANT_ID as string | undefined,
+  tenantId: (import.meta.env.VITE_ENTRA_TENANT_ID as string | undefined) || 'consumers',
   redirectUri: import.meta.env.VITE_REDIRECT_URI as string | undefined,
 }
 
@@ -176,7 +176,7 @@ function sortByDueDate(tasks: Task[]) {
 }
 
 function createAuthClient() {
-  if (!authConfig.clientId || !authConfig.tenantId) {
+  if (!authConfig.clientId) {
     return null
   }
 
