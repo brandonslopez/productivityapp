@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { PublicClientApplication, type AccountInfo } from '@azure/msal-browser'
 import './App.css'
 
@@ -192,6 +192,14 @@ function createAuthClient() {
   })
 }
 
+function getAuthErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  return String(error)
+}
+
 function App() {
   const [tasks, setTasks] = useLocalStorage<Task[]>('focuspartner.tasks', initialTasks)
   const [stakeholders, setStakeholders] = useLocalStorage<Stakeholder[]>(
@@ -204,6 +212,28 @@ function App() {
   const [guideDraft, setGuideDraft] = useState<GuideDraft | null>(null)
   const [account, setAccount] = useState<AccountInfo | null>(null)
   const [authMessage, setAuthMessage] = useState('')
+
+  useEffect(() => {
+    const authClient = createAuthClient()
+
+    if (!authClient) {
+      return
+    }
+
+    const loadExistingAccount = async () => {
+      await authClient.initialize()
+      const existingAccount = authClient.getAllAccounts()[0]
+
+      if (existingAccount) {
+        setAccount(existingAccount)
+        setAuthMessage('Signed in with Microsoft.')
+      }
+    }
+
+    void loadExistingAccount().catch((error: unknown) => {
+      setAuthMessage(`Microsoft sign-in could not be restored: ${getAuthErrorMessage(error)}`)
+    })
+  }, [])
 
   const focusTasks = useMemo(
     () => sortByDueDate(tasks.filter((task) => task.status !== 'Done')).slice(0, 3),
@@ -309,10 +339,28 @@ function App() {
       return
     }
 
-    await authClient.initialize()
-    const result = await authClient.loginPopup()
-    setAccount(result.account)
-    setAuthMessage('Signed in. Calendar sync can be connected to approved Graph actions next.')
+    try {
+      await authClient.initialize()
+      const result = await authClient.loginPopup({
+        prompt: 'select_account',
+      })
+
+      if (result.account) {
+        setAccount(result.account)
+        setAuthMessage('Signed in. Calendar sync can be connected to approved Graph actions next.')
+        return
+      }
+
+      const existingAccount = authClient.getAllAccounts()[0]
+      setAccount(existingAccount ?? null)
+      setAuthMessage(
+        existingAccount
+          ? 'Signed in with Microsoft.'
+          : 'Microsoft sign-in returned to the app, but no account was found.',
+      )
+    } catch (error: unknown) {
+      setAuthMessage(`Microsoft sign-in failed: ${getAuthErrorMessage(error)}`)
+    }
   }
 
   const activeStakeholder = (task: Task) =>
