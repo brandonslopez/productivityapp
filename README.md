@@ -28,7 +28,7 @@ Create a `.env.local` file from `.env.example` and fill in your Microsoft Entra 
 ```bash
 VITE_ENTRA_CLIENT_ID=your-client-id
 VITE_ENTRA_TENANT_ID=consumers
-VITE_REDIRECT_URI=http://localhost:5173
+VITE_REDIRECT_URI=http://localhost:5173/auth-complete.html
 ```
 
 Use `consumers` for personal Microsoft accounts, `common` for work/school plus personal accounts, or a tenant ID for one organization. The current prototype signs in without Microsoft Graph scopes; add least-privilege Graph permissions later when calendar or meeting recap sync is ready.

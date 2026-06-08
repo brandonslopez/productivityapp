@@ -19,13 +19,13 @@ Create a Microsoft Entra app registration for a single-page application.
 For local development:
 
 ```text
-http://localhost:5173
+http://localhost:5173/auth-complete.html
 ```
 
 For Azure Static Web Apps:
 
 ```text
-https://<your-static-web-app-hostname>
+https://<your-static-web-app-hostname>/auth-complete.html
 ```
 
 ## Sign-in and Graph scopes

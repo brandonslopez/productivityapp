@@ -59,6 +59,8 @@ const authConfig = {
   redirectUri: import.meta.env.VITE_REDIRECT_URI as string | undefined,
 }
 
+let authClient: PublicClientApplication | null | undefined
+
 const initialStakeholders: Stakeholder[] = [
   {
     id: 'partner-lead',
@@ -176,20 +178,27 @@ function sortByDueDate(tasks: Task[]) {
 }
 
 function createAuthClient() {
+  if (authClient !== undefined) {
+    return authClient
+  }
+
   if (!authConfig.clientId) {
+    authClient = null
     return null
   }
 
-  return new PublicClientApplication({
+  authClient = new PublicClientApplication({
     auth: {
       clientId: authConfig.clientId,
       authority: `https://login.microsoftonline.com/${authConfig.tenantId}`,
-      redirectUri: authConfig.redirectUri || window.location.origin,
+      redirectUri: authConfig.redirectUri || `${window.location.origin}/auth-complete.html`,
     },
     cache: {
-      cacheLocation: 'localStorage',
+      cacheLocation: 'sessionStorage',
     },
   })
+
+  return authClient
 }
 
 function getAuthErrorMessage(error: unknown) {
@@ -212,6 +221,7 @@ function App() {
   const [guideDraft, setGuideDraft] = useState<GuideDraft | null>(null)
   const [account, setAccount] = useState<AccountInfo | null>(null)
   const [authMessage, setAuthMessage] = useState('')
+  const [isSigningIn, setIsSigningIn] = useState(false)
 
   useEffect(() => {
     const authClient = createAuthClient()
@@ -339,6 +349,12 @@ function App() {
       return
     }
 
+    if (isSigningIn) {
+      return
+    }
+
+    setIsSigningIn(true)
+
     try {
       await authClient.initialize()
       const result = await authClient.loginPopup()
@@ -358,6 +374,8 @@ function App() {
       )
     } catch (error: unknown) {
       setAuthMessage(`Microsoft sign-in failed: ${getAuthErrorMessage(error)}`)
+    } finally {
+      setIsSigningIn(false)
     }
   }
 
@@ -377,8 +395,12 @@ function App() {
         </div>
         <section className="sign-in-card" aria-label="Microsoft sign-in">
           <span className="status-pill">{account ? account.username : 'Private workspace'}</span>
-          <button type="button" onClick={() => void signIn()}>
-            {account ? 'Microsoft connected' : 'Connect Microsoft 365'}
+          <button type="button" onClick={() => void signIn()} disabled={isSigningIn}>
+            {isSigningIn
+              ? 'Connecting...'
+              : account
+                ? 'Microsoft connected'
+                : 'Connect Microsoft 365'}
           </button>
           <p>
             {authMessage ||
