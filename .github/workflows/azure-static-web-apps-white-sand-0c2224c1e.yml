@@ -25,7 +25,7 @@ jobs:
         env:
           VITE_ENTRA_CLIENT_ID: 50585630-d341-4ddf-bbea-84f68738e20c
           VITE_ENTRA_TENANT_ID: consumers
-          VITE_REDIRECT_URI: https://white-sand-0c2224c1e.7.azurestaticapps.net/auth-complete.html
+          VITE_REDIRECT_URI: https://white-sand-0c2224c1e.7.azurestaticapps.net
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_SAND_0C2224C1E }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)

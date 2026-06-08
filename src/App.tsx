@@ -191,10 +191,10 @@ function createAuthClient() {
     auth: {
       clientId: authConfig.clientId,
       authority: `https://login.microsoftonline.com/${authConfig.tenantId}`,
-      redirectUri: authConfig.redirectUri || `${window.location.origin}/auth-complete.html`,
+      redirectUri: authConfig.redirectUri || window.location.origin,
     },
     cache: {
-      cacheLocation: 'sessionStorage',
+      cacheLocation: 'localStorage',
     },
   })
 
@@ -232,7 +232,8 @@ function App() {
 
     const loadExistingAccount = async () => {
       await authClient.initialize()
-      const existingAccount = authClient.getAllAccounts()[0]
+      const redirectResult = await authClient.handleRedirectPromise()
+      const existingAccount = redirectResult?.account ?? authClient.getAllAccounts()[0]
 
       if (existingAccount) {
         setAccount(existingAccount)
@@ -357,24 +358,9 @@ function App() {
 
     try {
       await authClient.initialize()
-      const result = await authClient.loginPopup()
-
-      if (result.account) {
-        setAccount(result.account)
-        setAuthMessage('Signed in. Calendar sync can be connected to approved Graph actions next.')
-        return
-      }
-
-      const existingAccount = authClient.getAllAccounts()[0]
-      setAccount(existingAccount ?? null)
-      setAuthMessage(
-        existingAccount
-          ? 'Signed in with Microsoft.'
-          : 'Microsoft sign-in returned to the app, but no account was found.',
-      )
+      await authClient.loginRedirect()
     } catch (error: unknown) {
       setAuthMessage(`Microsoft sign-in failed: ${getAuthErrorMessage(error)}`)
-    } finally {
       setIsSigningIn(false)
     }
   }
