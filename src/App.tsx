@@ -186,6 +186,19 @@ function getGraphErrorMessage(error: unknown) {
   return String(error)
 }
 
+function getMsalErrorCode(error: unknown) {
+  if (typeof error === 'object' && error !== null && 'errorCode' in error) {
+    const errorCode = (error as { errorCode?: unknown }).errorCode
+    return typeof errorCode === 'string' ? errorCode : null
+  }
+
+  return null
+}
+
+function needsInteractiveToken(error: unknown) {
+  return error instanceof InteractionRequiredAuthError || getMsalErrorCode(error) === 'timed_out'
+}
+
 function parseMinutes(value: string) {
   const parsedValue = Number.parseInt(value, 10)
   return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : 0
@@ -420,6 +433,7 @@ function App() {
   const [account, setAccount] = useState<AccountInfo | null>(null)
   const [authMessage, setAuthMessage] = useState('')
   const [isSigningIn, setIsSigningIn] = useState(false)
+  const [calendarAccessToken, setCalendarAccessToken] = useState<string | null>(null)
   const [calendarBusyBlocks, setCalendarBusyBlocks] = useState<CalendarBusyBlock[]>([])
   const [calendarMessage, setCalendarMessage] = useState('')
   const [isSyncingCalendar, setIsSyncingCalendar] = useState(false)
@@ -435,6 +449,10 @@ function App() {
       await authClient.initialize()
       const redirectResult = await authClient.handleRedirectPromise()
       const existingAccount = redirectResult?.account ?? authClient.getAllAccounts()[0]
+
+      if (redirectResult?.accessToken) {
+        setCalendarAccessToken(redirectResult.accessToken)
+      }
 
       if (existingAccount) {
         authClient.setActiveAccount(existingAccount)
@@ -530,6 +548,10 @@ function App() {
       throw new Error('Connect Microsoft 365 before syncing with Outlook calendar.')
     }
 
+    if (calendarAccessToken) {
+      return calendarAccessToken
+    }
+
     await authClient.initialize()
 
     try {
@@ -537,13 +559,13 @@ function App() {
         account,
         scopes: graphScopes,
       })
+      setCalendarAccessToken(tokenResult.accessToken)
       return tokenResult.accessToken
     } catch (error) {
-      if (error instanceof InteractionRequiredAuthError) {
-        await authClient.acquireTokenRedirect({
-          account,
-          scopes: graphScopes,
-        })
+      if (needsInteractiveToken(error)) {
+        throw new Error(
+          'Microsoft needs an interactive Outlook consent step. Click Connect Outlook calendar again, then return to the app.',
+        )
       }
 
       throw error
@@ -747,7 +769,10 @@ function App() {
 
     try {
       await authClient.initialize()
-      await authClient.loginRedirect({ scopes: graphScopes })
+      await authClient.loginRedirect({
+        scopes: graphScopes,
+        prompt: account ? 'consent' : 'select_account',
+      })
     } catch (error: unknown) {
       setAuthMessage(`Microsoft sign-in failed: ${getAuthErrorMessage(error)}`)
       setIsSigningIn(false)
