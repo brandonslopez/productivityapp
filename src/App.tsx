@@ -311,7 +311,7 @@ function App() {
 
     await authClient.initialize()
     const result = await authClient.loginPopup({
-      scopes: ['User.Read', 'Calendars.Read', 'Calendars.ReadWrite'],
+      scopes: ['User.Read'],
     })
     setAccount(result.account)
     setAuthMessage('Signed in. Calendar sync can be connected to approved Graph actions next.')

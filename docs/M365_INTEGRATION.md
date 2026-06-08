@@ -28,9 +28,12 @@ https://<your-static-web-app-hostname>
 
 ## Graph scopes
 
-The MVP requests:
+The MVP sign-in flow requests only:
 
 - `User.Read`
+
+Future calendar sync will require delegated Graph scopes:
+
 - `Calendars.Read`
 - `Calendars.ReadWrite`
 
