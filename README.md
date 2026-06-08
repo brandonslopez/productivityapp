@@ -9,7 +9,9 @@ FocusPlanner is a private, responsive web app for calendar-aware todo planning. 
 - Asks for actual time when a task is completed.
 - Learns locally from completed tasks to suggest duration for new work.
 - Connects to Outlook calendar to avoid busy times when suggesting focus blocks.
+- Shows a 7-day calendar view with Outlook busy blocks, todo due reminders, and scheduled focus blocks.
 - Creates Outlook events for due-date reminders and scheduled focus time.
+- Supports signing out of Outlook while keeping local todos available.
 - Falls back to downloadable `.ics` calendar blocks when Outlook is not connected.
 
 ## Run locally

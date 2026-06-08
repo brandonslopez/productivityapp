@@ -44,7 +44,9 @@ The sign-in flow requests delegated Microsoft Graph calendar access:
 4. The app suggests focus blocks before the due date that do not overlap existing todos or Outlook busy blocks.
 5. User selects a suggested time.
 6. The app creates a protected Outlook focus event and links the event ID back to the todo.
-7. If Outlook is not connected, the app still downloads an `.ics` calendar file as a manual fallback.
+7. The 7-day calendar view shows Outlook busy blocks, todo due reminders, and FocusPlanner work blocks together.
+8. If Outlook is not connected, the app still downloads an `.ics` calendar file as a manual fallback.
+9. User can sign out of Outlook; local todos remain stored in the browser.
 
 ## Data handling
 

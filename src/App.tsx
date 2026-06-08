@@ -49,6 +49,14 @@ type CalendarBusyBlock = {
   end: Date
 }
 
+type CalendarViewItem = {
+  id: string
+  title: string
+  start: Date
+  end: Date
+  type: 'outlook' | 'due' | 'focus'
+}
+
 type GraphCalendarEvent = {
   id: string
   subject?: string
@@ -225,8 +233,40 @@ function formatDateTime(date: Date) {
   }).format(date)
 }
 
+function formatDayHeading(date: Date) {
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  }).format(date)
+}
+
+function formatTimeRange(start: Date, end: Date) {
+  const formatter = new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+  return `${formatter.format(start)} - ${formatter.format(end)}`
+}
+
 function toDateInput(date: Date) {
   return date.toISOString().slice(0, 10)
+}
+
+function startOfDay(date: Date) {
+  const nextDate = new Date(date)
+  nextDate.setHours(0, 0, 0, 0)
+  return nextDate
+}
+
+function addDays(date: Date, days: number) {
+  const nextDate = new Date(date)
+  nextDate.setDate(date.getDate() + days)
+  return nextDate
+}
+
+function isSameDay(first: Date, second: Date) {
+  return startOfDay(first).getTime() === startOfDay(second).getTime()
 }
 
 function sortByPriority(tasks: TodoTask[]) {
@@ -380,6 +420,61 @@ function buildTaskEventBody(task: TodoTask, purpose: 'due' | 'work') {
     .join('<br>')
 }
 
+function getCalendarViewItems(tasks: TodoTask[], calendarBusyBlocks: CalendarBusyBlock[]) {
+  const taskEventIds = new Set<string>()
+  const taskItems = tasks.flatMap((task): CalendarViewItem[] => {
+    const items: CalendarViewItem[] = []
+
+    if (task.calendarStart && task.calendarEnd) {
+      if (task.workEventId) {
+        taskEventIds.add(task.workEventId)
+      }
+
+      items.push({
+        id: task.workEventId ?? `${task.id}-focus`,
+        title: `Focus: ${task.title}`,
+        start: new Date(task.calendarStart),
+        end: new Date(task.calendarEnd),
+        type: 'focus',
+      })
+    }
+
+    if (task.dueDate) {
+      const { start, end } = toDueEventWindow(task.dueDate)
+      if (task.dueEventId) {
+        taskEventIds.add(task.dueEventId)
+      }
+
+      items.push({
+        id: task.dueEventId ?? `${task.id}-due`,
+        title: `Due: ${task.title}`,
+        start,
+        end,
+        type: 'due',
+      })
+    }
+
+    return items
+  })
+
+  const outlookItems = calendarBusyBlocks
+    .filter((block) => !taskEventIds.has(block.id))
+    .map(
+      (block): CalendarViewItem => ({
+        id: block.id,
+        title: block.subject,
+        start: block.start,
+        end: block.end,
+        type: 'outlook',
+      }),
+    )
+
+  return [...taskItems, ...outlookItems].sort((first, second) => {
+    const startDifference = first.start.getTime() - second.start.getTime()
+    return startDifference || first.title.localeCompare(second.title)
+  })
+}
+
 function toIcsDate(date: Date) {
   return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
 }
@@ -473,6 +568,14 @@ function App() {
   )
   const blockedTasks = tasks.filter((task) => task.status === 'Blocked')
   const completedTasks = tasks.filter((task) => task.status === 'Done' && task.actualMinutes)
+  const calendarDays = useMemo(() => {
+    const today = startOfDay(new Date())
+    return Array.from({ length: 7 }, (_, index) => addDays(today, index))
+  }, [])
+  const calendarViewItems = useMemo(
+    () => getCalendarViewItems(tasks, calendarBusyBlocks),
+    [tasks, calendarBusyBlocks],
+  )
   const averageActualMinutes = completedTasks.length
     ? Math.round(
         completedTasks.reduce((total, task) => total + (task.actualMinutes ?? 0), 0) /
@@ -779,6 +882,30 @@ function App() {
     }
   }
 
+  const signOut = async () => {
+    const authClient = createAuthClient()
+
+    setAccount(null)
+    setCalendarAccessToken(null)
+    setCalendarBusyBlocks([])
+    setCalendarMessage('Signed out of Outlook calendar. Local todo planning is still available.')
+
+    if (!authClient) {
+      return
+    }
+
+    try {
+      await authClient.initialize()
+      const signedOutAccount = account ?? authClient.getActiveAccount() ?? authClient.getAllAccounts()[0]
+      await authClient.logoutRedirect({
+        account: signedOutAccount ?? undefined,
+        postLogoutRedirectUri: window.location.origin,
+      })
+    } catch (error: unknown) {
+      setAuthMessage(`Microsoft sign-out failed: ${getAuthErrorMessage(error)}`)
+    }
+  }
+
   return (
     <main className="app-shell">
       <header className="hero-card">
@@ -800,14 +927,19 @@ function App() {
                 : 'Connect Outlook calendar'}
           </button>
           {account ? (
-            <button
-              className="secondary-button"
-              disabled={isSyncingCalendar}
-              onClick={() => void refreshCalendar()}
-              type="button"
-            >
-              {isSyncingCalendar ? 'Syncing calendar...' : 'Refresh calendar'}
-            </button>
+            <div className="auth-actions">
+              <button
+                className="secondary-button"
+                disabled={isSyncingCalendar}
+                onClick={() => void refreshCalendar()}
+                type="button"
+              >
+                {isSyncingCalendar ? 'Syncing calendar...' : 'Refresh calendar'}
+              </button>
+              <button className="secondary-button" onClick={() => void signOut()} type="button">
+                Sign out
+              </button>
+            </div>
           ) : null}
           <p>
             {authMessage ||
@@ -816,6 +948,53 @@ function App() {
           <p>{calendarMessage || 'Local mode still creates downloadable calendar blocks.'}</p>
         </section>
       </header>
+
+      <section className="panel calendar-panel" aria-label="Connected calendar view">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Calendar view</p>
+            <h2>Your next 7 days</h2>
+          </div>
+          <span className="count-badge">
+            {calendarViewItems.length} calendar {calendarViewItems.length === 1 ? 'item' : 'items'}
+          </span>
+        </div>
+        <div className="calendar-legend" aria-label="Calendar legend">
+          <span className="legend-item legend-outlook">Outlook busy</span>
+          <span className="legend-item legend-focus">Focus block</span>
+          <span className="legend-item legend-due">Due reminder</span>
+        </div>
+        <div className="calendar-week" role="list" aria-label="Seven day calendar">
+          {calendarDays.map((day) => {
+            const dayItems = calendarViewItems.filter((item) => isSameDay(item.start, day))
+
+            return (
+              <article className="calendar-day" key={day.toISOString()} role="listitem">
+                <div className="calendar-day-heading">
+                  <strong>{formatDayHeading(day)}</strong>
+                  <span>{dayItems.length}</span>
+                </div>
+                <div className="calendar-day-events">
+                  {dayItems.length ? (
+                    dayItems.map((item) => (
+                      <div className={`calendar-event calendar-event-${item.type}`} key={item.id}>
+                        <span>{formatTimeRange(item.start, item.end)}</span>
+                        <strong>{item.title}</strong>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="calendar-empty">No blocks</p>
+                  )}
+                </div>
+              </article>
+            )
+          })}
+        </div>
+        <p className="guardrail">
+          Outlook events appear after you connect or refresh calendar. FocusPlanner todo due dates and
+          selected focus blocks stay visible here even before Outlook finishes syncing.
+        </p>
+      </section>
 
       <section className="dashboard-grid" aria-label="Calendar task planner">
         <section className="panel task-form-panel">

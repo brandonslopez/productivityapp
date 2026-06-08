@@ -47,6 +47,12 @@
   padding: 20px;
 }
 
+.auth-actions {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+}
+
 .status-pill,
 .count-badge {
   align-self: flex-start;
@@ -221,7 +227,7 @@ textarea {
 }
 
 .metric-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
 }
 
 .metric-grid strong {
@@ -263,6 +269,124 @@ textarea {
   gap: 4px;
 }
 
+.calendar-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.legend-item {
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 6px 10px;
+}
+
+.legend-outlook {
+  background: #e8f5f5;
+  color: #174c57;
+}
+
+.legend-focus {
+  background: #eaf0ff;
+  color: #284b9b;
+}
+
+.legend-due {
+  background: #fff3d0;
+  color: #6b4e00;
+}
+
+.calendar-week {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(7, minmax(145px, 1fr));
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.calendar-day {
+  background: #f8fbfb;
+  border: 1px solid rgba(27, 60, 83, 0.1);
+  border-radius: 18px;
+  display: grid;
+  gap: 12px;
+  min-height: 220px;
+  padding: 12px;
+}
+
+.calendar-day-heading {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.calendar-day-heading strong {
+  color: #132d35;
+}
+
+.calendar-day-heading span {
+  background: #ffffff;
+  border-radius: 999px;
+  color: #536b76;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 4px 8px;
+}
+
+.calendar-day-events {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.calendar-event {
+  border-left: 4px solid #2d6a73;
+  border-radius: 12px;
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+}
+
+.calendar-event span {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #536b76;
+}
+
+.calendar-event strong {
+  color: #132d35;
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
+.calendar-event-outlook {
+  background: #e8f5f5;
+  border-left-color: #2d6a73;
+}
+
+.calendar-event-focus {
+  background: #eaf0ff;
+  border-left-color: #4267c2;
+}
+
+.calendar-event-due {
+  background: #fff8e6;
+  border-left-color: #d99b00;
+}
+
+.calendar-empty {
+  color: #6c7d86;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
 @media (max-width: 960px) {
   .app-shell {
     padding: 14px;
@@ -274,5 +398,9 @@ textarea {
   .metric-grid,
   .task-details {
     grid-template-columns: 1fr;
+  }
+
+  .auth-actions {
+  grid-template-columns: 1fr;
   }
 }
