@@ -26,13 +26,15 @@ For Azure Static Web Apps:
 https://<your-static-web-app-hostname>
 ```
 
-## Graph scopes
+## Sign-in and Graph scopes
 
-The MVP sign-in flow requests only:
+The MVP sign-in flow does not request Microsoft Graph scopes. It only signs the user in with Entra ID so it can avoid tenant consent blockers while the app is still a personal prototype.
+
+Future Graph integrations should add least-privilege delegated scopes only when the feature is ready. A basic profile read would require:
 
 - `User.Read`
 
-Future calendar sync will require delegated Graph scopes:
+Calendar sync would require delegated Graph scopes:
 
 - `Calendars.Read`
 - `Calendars.ReadWrite`
