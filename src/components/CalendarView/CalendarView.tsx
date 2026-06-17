@@ -45,7 +45,11 @@ export function CalendarView({ calendarViewItems }: Props) {
                 {dayItems.length ? (
                   dayItems.map((item) => (
                     <div className={`calendar-event calendar-event-${item.type}`} key={item.id}>
-                      <span>{formatTimeRange(item.start, item.end)}</span>
+                      {item.type === 'due' ? (
+                        <span>Due date</span>
+                      ) : (
+                        <span>{formatTimeRange(item.start, item.end)}</span>
+                      )}
                       <strong>{item.title}</strong>
                     </div>
                   ))
