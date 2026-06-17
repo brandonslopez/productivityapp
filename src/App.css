@@ -431,68 +431,132 @@ textarea {
   color: var(--calendar-work-border);
 }
 
-.calendar-week {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(7, minmax(145px, 1fr));
+/* Outlook-style time grid */
+.calendar-grid-container {
   overflow-x: auto;
-  padding-bottom: 6px;
-}
-
-.calendar-day {
-  background: var(--surface-alt);
   border: 1px solid var(--border);
-  border-radius: 18px;
-  display: grid;
-  gap: 12px;
-  min-height: 220px;
-  padding: 12px;
-}
-
-.calendar-day-heading {
-  align-items: center;
-  display: flex;
-  gap: 10px;
-  justify-content: space-between;
-}
-
-.calendar-day-heading strong {
-  color: var(--text-heading);
-}
-
-.calendar-day-heading span {
-  background: var(--surface);
-  border-radius: 999px;
-  color: var(--text-muted);
-  font-size: 0.78rem;
-  font-weight: 800;
-  padding: 4px 8px;
-}
-
-.calendar-day-events {
-  display: grid;
-  gap: 8px;
-  align-content: start;
-}
-
-.calendar-event {
-  border-left: 4px solid var(--accent);
   border-radius: 12px;
+  background: var(--surface-alt);
+}
+
+.calendar-grid {
   display: grid;
-  gap: 4px;
-  padding: 10px;
+  min-width: 700px;
 }
 
-.calendar-event span {
-  font-size: 0.75rem;
-  font-weight: 800;
+.calendar-grid-tz {
+  padding: 10px 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
   color: var(--text-muted);
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
 }
 
-.calendar-event strong {
+.calendar-grid-header {
+  padding: 10px 8px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+.calendar-grid-header:last-child {
+  border-right: none;
+}
+
+.calendar-grid-header strong {
+  font-size: 0.85rem;
   color: var(--text-heading);
-  font-size: 0.9rem;
-  line-height: 1.25;
+}
+
+.calendar-time-column {
+  border-right: 1px solid var(--border);
+}
+
+.calendar-time-label {
+  height: 48px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 0 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.calendar-time-label span {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transform: translateY(-6px);
+}
+
+.calendar-day-column {
+  position: relative;
+  border-right: 1px solid var(--border);
+  min-height: calc(48px * 13); /* 13 hours × 48px */
+}
+
+.calendar-day-column:last-child {
+  border-right: none;
+}
+
+.calendar-hour-row {
+  height: 48px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.calendar-half-hour-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--border);
+  opacity: 0.5;
+}
+
+/* All-day / due date banner */
+.calendar-allday-event {
+  position: absolute;
+  top: 0;
+  left: 2px;
+  right: 2px;
+  z-index: 5;
+  padding: 3px 6px;
+  border-radius: 4px;
+  border-left: 3px solid;
+  font-size: 0.72rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.calendar-allday-event strong {
+  font-size: 0.72rem;
+  color: var(--text-heading);
+}
+
+/* Timed events positioned absolutely */
+.calendar-timed-event {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  z-index: 3;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border-left: 3px solid;
+  overflow: hidden;
+  font-size: 0.75rem;
+}
+
+.calendar-timed-event strong {
+  font-size: 0.75rem;
+  color: var(--text-heading);
+  line-height: 1.2;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .calendar-event-outlook {
@@ -513,12 +577,6 @@ textarea {
 .calendar-event-work-calendar {
   background: var(--calendar-work-bg);
   border-left-color: var(--calendar-work-border);
-}
-
-.calendar-empty {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  margin: 0;
 }
 
 @media (max-width: 960px) {

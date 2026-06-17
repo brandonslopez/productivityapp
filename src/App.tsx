@@ -50,6 +50,7 @@ const defaultSettings: AppSettings = {
   },
   workCalendarIcsUrl: '',
   workCalendarRefreshMinutes: 15,
+  includeWeekends: false,
 }
 
 const defaultFilter: SearchFilterType = {
@@ -381,7 +382,7 @@ function App() {
         </section>
       </header>
 
-      <CalendarView calendarViewItems={calendarViewItems} />
+      <CalendarView calendarViewItems={calendarViewItems} includeWeekends={settings.includeWeekends} />
 
       <section className="dashboard-grid" aria-label="Calendar task planner">
         <TaskForm

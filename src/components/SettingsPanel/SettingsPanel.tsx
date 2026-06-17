@@ -45,6 +45,18 @@ export function SettingsPanel({ settings, onSettingsChange, onClose }: Props) {
           </fieldset>
 
           <fieldset className="settings-section">
+            <legend>Calendar preferences</legend>
+            <label className="settings-checkbox">
+              <input
+                type="checkbox"
+                checked={settings.includeWeekends}
+                onChange={(e) => update({ includeWeekends: e.target.checked })}
+              />
+              Include Saturday and Sunday in calendar view
+            </label>
+          </fieldset>
+
+          <fieldset className="settings-section">
             <legend>SMS notifications</legend>
             <p className="settings-help">
               Enter your phone number to receive SMS reminders via Azure Communication Services.
