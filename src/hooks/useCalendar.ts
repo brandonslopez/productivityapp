@@ -18,10 +18,18 @@ export function useCalendar(
   const fetchWorkCalendarIcs = useCallback(async (): Promise<CalendarBusyBlock[]> => {
     if (!workCalendarIcsUrl) return []
     try {
-      const response = await fetch(workCalendarIcsUrl)
-      if (!response.ok) throw new Error(`ICS fetch failed: ${response.status}`)
-      const text = await response.text()
-      const events = parseIcsFeed(text)
+      // Proxy through our API to avoid CORS issues
+      const response = await fetch('/api/fetch-ics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: workCalendarIcsUrl }),
+      })
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: 'ICS fetch failed' }))
+        throw new Error((err as { error?: string }).error || `ICS fetch failed: ${response.status}`)
+      }
+      const data = await response.json() as { icsText: string }
+      const events = parseIcsFeed(data.icsText)
       const now = new Date()
       const rangeEnd = new Date(now)
       rangeEnd.setDate(now.getDate() + 14)

@@ -74,12 +74,16 @@ export function parseIcsFeed(icsText: string): Array<{ uid: string; summary: str
       const colonIndex = line.indexOf(':')
       if (colonIndex === -1) continue
       const key = line.slice(0, colonIndex).split(';')[0]
+      const fullKey = line.slice(0, colonIndex)
       const value = line.slice(colonIndex + 1)
 
       if (key === 'UID') uid = value
       else if (key === 'SUMMARY') summary = value
       else if (key === 'DTSTART') dtstart = value
       else if (key === 'DTEND') dtend = value
+      // Handle TZID parameters (e.g., DTSTART;TZID=Eastern Standard Time:20250615T140000)
+      else if (fullKey.startsWith('DTSTART;')) dtstart = value
+      else if (fullKey.startsWith('DTEND;')) dtend = value
     }
   }
 
@@ -87,12 +91,22 @@ export function parseIcsFeed(icsText: string): Array<{ uid: string; summary: str
 }
 
 function parseIcsDateTime(value: string): Date | null {
-  // Formats: 20250615T140000Z or 20250615T140000
-  const match = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z?$/)
-  if (!match) return null
-  const [, y, mo, d, h, mi, s] = match
-  if (value.endsWith('Z')) {
-    return new Date(Date.UTC(+y, +mo - 1, +d, +h, +mi, +s))
+  // Format: 20250615T140000Z or 20250615T140000
+  const matchDateTime = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z?$/)
+  if (matchDateTime) {
+    const [, y, mo, d, h, mi, s] = matchDateTime
+    if (value.endsWith('Z')) {
+      return new Date(Date.UTC(+y, +mo - 1, +d, +h, +mi, +s))
+    }
+    return new Date(+y, +mo - 1, +d, +h, +mi, +s)
   }
-  return new Date(+y, +mo - 1, +d, +h, +mi, +s)
+
+  // Format: 20250615 (all-day event)
+  const matchDate = value.match(/^(\d{4})(\d{2})(\d{2})$/)
+  if (matchDate) {
+    const [, y, mo, d] = matchDate
+    return new Date(+y, +mo - 1, +d)
+  }
+
+  return null
 }
