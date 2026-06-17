@@ -131,5 +131,4 @@ export type AppSettings = {
   defaultNotifications: NotificationPreference
   workCalendarIcsUrl: string
   workCalendarRefreshMinutes: number
-  powerAutomateFlowUrl: string
 }

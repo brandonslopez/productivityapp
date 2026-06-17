@@ -45,22 +45,6 @@ export function SettingsPanel({ settings, onSettingsChange, onClose }: Props) {
           </fieldset>
 
           <fieldset className="settings-section">
-            <legend>Work calendar sync via Power Automate</legend>
-            <p className="settings-help">
-              Create a Power Automate flow that creates Outlook events on your work calendar. Paste the flow's HTTP trigger URL here so FocusPlanner can send events directly to your work calendar without admin consent.
-            </p>
-            <label>
-              Flow URL
-              <input
-                type="url"
-                value={settings.powerAutomateFlowUrl}
-                onChange={(e) => update({ powerAutomateFlowUrl: e.target.value })}
-                placeholder="https://prod-XX.westus.logic.azure.com/workflows/..."
-              />
-            </label>
-          </fieldset>
-
-          <fieldset className="settings-section">
             <legend>SMS notifications</legend>
             <p className="settings-help">
               Enter your phone number to receive SMS reminders via Azure Communication Services.

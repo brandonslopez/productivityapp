@@ -144,23 +144,6 @@ export function useCalendar(
       eventId = event.id
     }
 
-    // Also push to work calendar via Power Automate
-    try {
-      await fetch('/api/proxy-calendar-event', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subject,
-          startDateTime: toGraphUtcDateTime(start),
-          endDateTime: toGraphUtcDateTime(end),
-          body: buildTaskEventBody(task, purpose),
-          categories: ['FocusPlanner'],
-        }),
-      })
-    } catch {
-      // Work calendar sync is best-effort — don't fail if Power Automate isn't configured
-    }
-
     return eventId ?? `local-${task.id}-${purpose}`
   }, [account, graphRequest])
 

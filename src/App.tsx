@@ -50,7 +50,6 @@ const defaultSettings: AppSettings = {
   },
   workCalendarIcsUrl: '',
   workCalendarRefreshMinutes: 15,
-  powerAutomateFlowUrl: '',
 }
 
 const defaultFilter: SearchFilterType = {
@@ -166,7 +165,7 @@ function App() {
     [filteredTasks],
   )
 
-  const blockedTasks = tasks.filter((t) => t.status === 'Blocked')
+  const blockedTasks = tasks.filter((t) => t.status === 'Blocked' || (t.blockers && t.blockers.trim() !== ''))
   const completedTasks = tasks.filter((t) => t.status === 'Done' && t.actualMinutes)
   const calendarViewItems = useMemo(
     () => getCalendarViewItems(tasks, calendar.calendarBusyBlocks),
@@ -473,8 +472,9 @@ function App() {
               {blockedTasks.map((task) => (
                 <article className="waiting-item" key={task.id} onClick={() => setEditingTaskId(task.id)} style={{ cursor: 'pointer' }}>
                   <strong>{task.title}</strong>
-                  <p>{task.blockers || 'No blocker details yet.'}</p>
-                </article>
+                    {task.status !== 'Blocked' && <span className="status-badge">{task.status}</span>}
+                    <p>{task.blockers || 'No blocker details yet.'}</p>
+                  </article>
               ))}
             </div>
           ) : (
