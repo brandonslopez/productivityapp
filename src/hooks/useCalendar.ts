@@ -124,21 +124,45 @@ export function useCalendar(
     end: Date,
     purpose: 'due' | 'work',
   ) => {
-    const event = await graphRequest<GraphCreatedEvent>('/me/events', {
-      method: 'POST',
-      body: JSON.stringify({
-        subject,
-        body: { contentType: 'HTML', content: buildTaskEventBody(task, purpose) },
-        start: { dateTime: toGraphUtcDateTime(start), timeZone: 'UTC' },
-        end: { dateTime: toGraphUtcDateTime(end), timeZone: 'UTC' },
-        isReminderOn: true,
-        reminderMinutesBeforeStart: purpose === 'due' ? 60 : 15,
-        categories: ['FocusPlanner'],
-      }),
-    })
-    if (!event.id) throw new Error('Outlook created an event without returning an event ID.')
-    return event.id
-  }, [graphRequest])
+    let eventId: string | null = null
+
+    // Create on personal Outlook if signed in
+    if (account) {
+      const event = await graphRequest<GraphCreatedEvent>('/me/events', {
+        method: 'POST',
+        body: JSON.stringify({
+          subject,
+          body: { contentType: 'HTML', content: buildTaskEventBody(task, purpose) },
+          start: { dateTime: toGraphUtcDateTime(start), timeZone: 'UTC' },
+          end: { dateTime: toGraphUtcDateTime(end), timeZone: 'UTC' },
+          isReminderOn: true,
+          reminderMinutesBeforeStart: purpose === 'due' ? 60 : 15,
+          categories: ['FocusPlanner'],
+        }),
+      })
+      if (!event.id) throw new Error('Outlook created an event without returning an event ID.')
+      eventId = event.id
+    }
+
+    // Also push to work calendar via Power Automate
+    try {
+      await fetch('/api/proxy-calendar-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject,
+          startDateTime: toGraphUtcDateTime(start),
+          endDateTime: toGraphUtcDateTime(end),
+          body: buildTaskEventBody(task, purpose),
+          categories: ['FocusPlanner'],
+        }),
+      })
+    } catch {
+      // Work calendar sync is best-effort — don't fail if Power Automate isn't configured
+    }
+
+    return eventId ?? `local-${task.id}-${purpose}`
+  }, [account, graphRequest])
 
   const createDueDateEvent = useCallback(async (task: TodoTask) => {
     if (!task.dueDate || task.dueEventId) return null

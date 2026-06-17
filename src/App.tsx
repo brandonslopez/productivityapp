@@ -50,6 +50,7 @@ const defaultSettings: AppSettings = {
   },
   workCalendarIcsUrl: '',
   workCalendarRefreshMinutes: 15,
+  powerAutomateFlowUrl: '',
 }
 
 const defaultFilter: SearchFilterType = {
