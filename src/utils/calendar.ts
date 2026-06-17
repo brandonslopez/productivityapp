@@ -95,25 +95,11 @@ export function toGraphUtcDateTime(date: Date) {
   return date.toISOString().replace(/\.\d{3}Z$/, '')
 }
 
-export function toDueEventWindow(dueDate: string, busyBlocks: CalendarBusyBlock[] = [], tasks: TodoTask[] = []) {
-  const dueDateObj = new Date(`${dueDate}T17:00:00`)
-  const REMINDER_DURATION = 30 // 30-minute reminder block
-
-  // Try to find a free 30-minute slot on the due date, working backwards from 5pm
-  for (let minutes = 16 * 60; minutes >= 9 * 60; minutes -= 30) {
-    const start = new Date(dueDateObj)
-    start.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0)
-    const end = new Date(start.getTime() + REMINDER_DURATION * 60 * 1000)
-
-    if (!overlapsBusyBlock(start, end, busyBlocks) && !overlapsExistingTask(start, end, tasks)) {
-      return { start, end }
-    }
-  }
-
-  // Fallback: end-of-day on the due date
-  const start = new Date(`${dueDate}T16:30:00`)
-  const end = new Date(start.getTime() + REMINDER_DURATION * 60 * 1000)
-  return { start, end }
+export function toDueEventWindow(dueDate: string) {
+  // All-day event on the due date
+  const start = new Date(`${dueDate}T00:00:00`)
+  const end = new Date(`${dueDate}T23:59:59`)
+  return { start, end, isAllDay: true }
 }
 
 export function buildTaskEventBody(task: TodoTask, purpose: 'due' | 'work') {
@@ -148,7 +134,7 @@ export function getCalendarViewItems(
     }
 
     if (task.dueDate) {
-      const { start, end } = toDueEventWindow(task.dueDate, busyBlocks, tasks)
+      const { start, end } = toDueEventWindow(task.dueDate)
       if (task.dueEventId) taskEventIds.add(task.dueEventId)
       items.push({
         id: task.dueEventId ?? `${task.id}-due`,

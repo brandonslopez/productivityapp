@@ -110,7 +110,7 @@ function App() {
   const { darkMode, toggle: toggleDarkMode } = useDarkMode()
   const { toasts, removeToast, success, error: showError } = useToast()
   const auth = useAuth()
-  const calendar = useCalendar(auth.account, auth.graphRequest, settings.workCalendarIcsUrl, tasks)
+  const calendar = useCalendar(auth.account, auth.graphRequest, settings.workCalendarIcsUrl)
   const ai = useAiSuggestion()
 
   const sensors = useSensors(

@@ -10,7 +10,6 @@ export function useCalendar(
   account: AccountInfo | null,
   graphRequest: GraphRequestFn,
   workCalendarIcsUrl: string,
-  tasks: TodoTask[] = [],
 ) {
   const [calendarBusyBlocks, setCalendarBusyBlocks] = useState<CalendarBusyBlock[]>([])
   const [calendarMessage, setCalendarMessage] = useState('')
@@ -124,22 +123,38 @@ export function useCalendar(
     start: Date,
     end: Date,
     purpose: 'due' | 'work',
+    isAllDay?: boolean,
   ) => {
     let eventId: string | null = null
 
     // Create on personal Outlook if signed in
     if (account) {
+      const eventBody: Record<string, unknown> = {
+        subject,
+        body: { contentType: 'HTML', content: buildTaskEventBody(task, purpose) },
+        isReminderOn: true,
+        reminderMinutesBeforeStart: purpose === 'due' ? 60 : 15,
+        categories: ['FocusPlanner'],
+      }
+
+      if (isAllDay) {
+        // All-day event: use date-only format, show as free
+        const dateStr = start.toISOString().split('T')[0]
+        const nextDay = new Date(start)
+        nextDay.setDate(nextDay.getDate() + 1)
+        const endDateStr = nextDay.toISOString().split('T')[0]
+        eventBody.start = { dateTime: dateStr, timeZone: 'UTC' }
+        eventBody.end = { dateTime: endDateStr, timeZone: 'UTC' }
+        eventBody.isAllDay = true
+        eventBody.showAs = 'free'
+      } else {
+        eventBody.start = { dateTime: toGraphUtcDateTime(start), timeZone: 'UTC' }
+        eventBody.end = { dateTime: toGraphUtcDateTime(end), timeZone: 'UTC' }
+      }
+
       const event = await graphRequest<GraphCreatedEvent>('/me/events', {
         method: 'POST',
-        body: JSON.stringify({
-          subject,
-          body: { contentType: 'HTML', content: buildTaskEventBody(task, purpose) },
-          start: { dateTime: toGraphUtcDateTime(start), timeZone: 'UTC' },
-          end: { dateTime: toGraphUtcDateTime(end), timeZone: 'UTC' },
-          isReminderOn: true,
-          reminderMinutesBeforeStart: purpose === 'due' ? 60 : 15,
-          categories: ['FocusPlanner'],
-        }),
+        body: JSON.stringify(eventBody),
       })
       if (!event.id) throw new Error('Outlook created an event without returning an event ID.')
       eventId = event.id
@@ -151,12 +166,12 @@ export function useCalendar(
   const createDueDateEvent = useCallback(async (task: TodoTask) => {
     if (!task.dueDate || task.dueEventId) return null
     setCalendarMessage(`Adding due-date reminder for "${task.title}" to Outlook...`)
-    const { start, end } = toDueEventWindow(task.dueDate, calendarBusyBlocks, tasks)
-    const dueEventId = await createCalendarEvent(task, `Due: ${task.title}`, start, end, 'due')
+    const { start, end, isAllDay } = toDueEventWindow(task.dueDate)
+    const dueEventId = await createCalendarEvent(task, `Due: ${task.title}`, start, end, 'due', isAllDay)
     setCalendarMessage(`Added due-date reminder for "${task.title}" to Outlook.`)
     await refreshCalendar()
     return dueEventId
-  }, [createCalendarEvent, refreshCalendar, calendarBusyBlocks, tasks])
+  }, [createCalendarEvent, refreshCalendar])
 
   return {
     calendarBusyBlocks,
