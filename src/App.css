@@ -7,8 +7,8 @@
 
 .hero-card,
 .panel {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(27, 60, 83, 0.12);
+  background: var(--surface-card);
+  border: 1px solid var(--border);
   border-radius: 28px;
   box-shadow: 0 24px 60px rgba(36, 54, 66, 0.08);
 }
@@ -21,14 +21,29 @@
   padding: 32px;
 }
 
+.hero-title-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.settings-btn {
+  font-size: 0.88rem;
+}
+
 .hero-copy {
-  color: #4a5c68;
+  color: var(--text-secondary);
   font-size: 1.08rem;
   max-width: 780px;
 }
 
 .eyebrow {
-  color: #2d6a73;
+  color: var(--accent);
   font-size: 0.74rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -37,8 +52,8 @@
 }
 
 .sign-in-card {
-  background: linear-gradient(145deg, #f2fbfb, #ffffff);
-  border: 1px solid rgba(45, 106, 115, 0.14);
+  background: var(--ai-card-bg);
+  border: 1px solid var(--ai-card-border);
   border-radius: 22px;
   display: flex;
   flex-direction: column;
@@ -64,23 +79,52 @@
 
 .status-pill,
 .count-badge {
-  background: #e8f5f5;
-  color: #205d65;
+  background: var(--status-default-bg);
+  color: var(--status-default-color);
 }
 
 .status-blocked {
-  background: #ffecef;
-  color: #9a3140;
+  background: var(--status-blocked-bg);
+  color: var(--status-blocked-color);
 }
 
 .status-scheduled {
-  background: #eaf0ff;
-  color: #284b9b;
+  background: var(--status-scheduled-bg);
+  color: var(--status-scheduled-color);
 }
 
 .status-done {
-  background: #edf7ee;
-  color: #24623a;
+  background: var(--status-done-bg);
+  color: var(--status-done-color);
+}
+
+.category-badge {
+  background: var(--calendar-work-bg);
+  border-radius: 999px;
+  color: var(--calendar-work-border);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 8px;
+}
+
+.tag-badge {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 7px;
+}
+
+.recurrence-badge {
+  background: var(--ai-card-bg);
+  border: 1px solid var(--ai-card-border);
+  border-radius: 12px;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 8px 12px;
 }
 
 .dashboard-grid {
@@ -110,6 +154,41 @@
   justify-content: space-between;
 }
 
+.task-topline-left {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.task-topline-right {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.edit-task-btn {
+  background: transparent !important;
+  border: 0;
+  cursor: pointer;
+  font-size: 1rem;
+  min-width: auto;
+  padding: 4px 8px;
+}
+
+.drag-handle {
+  color: var(--text-muted);
+  cursor: grab;
+  font-size: 1.2rem;
+  padding: 4px 8px;
+  text-align: center;
+  user-select: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
 .task-form,
 .task-form label,
 .task-stack,
@@ -122,8 +201,8 @@
 .task-card,
 .metric-grid article,
 .waiting-item {
-  background: #f8fbfb;
-  border: 1px solid rgba(27, 60, 83, 0.1);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
   border-radius: 20px;
   padding: 16px;
 }
@@ -145,20 +224,20 @@
 }
 
 .task-details div {
-  background: #ffffff;
+  background: var(--surface);
   border-radius: 14px;
   padding: 10px;
 }
 
 .task-details dt {
-  color: #536b76;
+  color: var(--text-muted);
   font-size: 0.75rem;
   font-weight: 800;
   text-transform: uppercase;
 }
 
 .task-details dd {
-  color: #132d35;
+  color: var(--text-heading);
   font-weight: 800;
   margin: 2px 0 0;
 }
@@ -171,7 +250,7 @@ textarea {
 }
 
 button {
-  background: #174c57;
+  background: var(--primary);
   border: 0;
   border-radius: 999px;
   color: #ffffff;
@@ -181,7 +260,7 @@ button {
 }
 
 button:hover:not(:disabled) {
-  background: #0f3942;
+  background: var(--primary-hover);
 }
 
 button:disabled {
@@ -191,22 +270,22 @@ button:disabled {
 
 .secondary-button,
 .schedule-list button {
-  background: #e8f5f5;
-  color: #174c57;
+  background: var(--status-default-bg);
+  color: var(--primary);
 }
 
 .secondary-button:hover,
 .schedule-list button:hover {
-  background: #d9eeee;
+  background: var(--surface-hover);
 }
 
 select,
 input,
 textarea {
-  background: #ffffff;
-  border: 1px solid rgba(27, 60, 83, 0.18);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
   border-radius: 14px;
-  color: #20313a;
+  color: var(--text);
   padding: 11px 12px;
 }
 
@@ -231,14 +310,14 @@ textarea {
 }
 
 .metric-grid strong {
-  color: #132d35;
+  color: var(--text-heading);
   display: block;
   font-size: 1.65rem;
   line-height: 1;
 }
 
 .metric-grid span {
-  color: #536b76;
+  color: var(--text-muted);
   display: block;
   font-size: 0.85rem;
   margin-top: 6px;
@@ -247,9 +326,9 @@ textarea {
 .calendar-callout,
 .guardrail,
 .empty-state {
-  background: #fff8e6;
+  background: var(--guardrail-bg);
   border-radius: 16px;
-  color: #6b4e00;
+  color: var(--guardrail-color);
   padding: 14px;
 }
 
@@ -260,8 +339,8 @@ textarea {
 
 .ai-assistant-card,
 .subtask-list {
-  background: #eef8f8;
-  border: 1px solid rgba(45, 106, 115, 0.14);
+  background: var(--ai-card-bg);
+  border: 1px solid var(--ai-card-border);
   border-radius: 18px;
   display: grid;
   gap: 12px;
@@ -270,12 +349,12 @@ textarea {
 
 .ai-assistant-card p,
 .subtask-list p {
-  color: #536b76;
+  color: var(--text-muted);
   margin: 4px 0 0;
 }
 
 .ai-rationale {
-  background: #ffffff;
+  background: var(--surface);
   border-radius: 14px;
   padding: 12px;
 }
@@ -299,12 +378,12 @@ textarea {
 }
 
 .subtask-list input:checked + span {
-  color: #6c7d86;
+  color: var(--text-muted);
   text-decoration: line-through;
 }
 
 .schedule-list {
-  background: #eef8f8;
+  background: var(--ai-card-bg);
   border-radius: 16px;
   padding: 14px;
 }
@@ -333,18 +412,23 @@ textarea {
 }
 
 .legend-outlook {
-  background: #e8f5f5;
-  color: #174c57;
+  background: var(--calendar-outlook-bg);
+  color: var(--primary);
 }
 
 .legend-focus {
-  background: #eaf0ff;
-  color: #284b9b;
+  background: var(--calendar-focus-bg);
+  color: var(--status-scheduled-color);
 }
 
 .legend-due {
-  background: #fff3d0;
-  color: #6b4e00;
+  background: var(--calendar-due-bg);
+  color: var(--guardrail-color);
+}
+
+.legend-work-calendar {
+  background: var(--calendar-work-bg);
+  color: var(--calendar-work-border);
 }
 
 .calendar-week {
@@ -356,8 +440,8 @@ textarea {
 }
 
 .calendar-day {
-  background: #f8fbfb;
-  border: 1px solid rgba(27, 60, 83, 0.1);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
   border-radius: 18px;
   display: grid;
   gap: 12px;
@@ -373,13 +457,13 @@ textarea {
 }
 
 .calendar-day-heading strong {
-  color: #132d35;
+  color: var(--text-heading);
 }
 
 .calendar-day-heading span {
-  background: #ffffff;
+  background: var(--surface);
   border-radius: 999px;
-  color: #536b76;
+  color: var(--text-muted);
   font-size: 0.78rem;
   font-weight: 800;
   padding: 4px 8px;
@@ -392,7 +476,7 @@ textarea {
 }
 
 .calendar-event {
-  border-left: 4px solid #2d6a73;
+  border-left: 4px solid var(--accent);
   border-radius: 12px;
   display: grid;
   gap: 4px;
@@ -402,32 +486,37 @@ textarea {
 .calendar-event span {
   font-size: 0.75rem;
   font-weight: 800;
-  color: #536b76;
+  color: var(--text-muted);
 }
 
 .calendar-event strong {
-  color: #132d35;
+  color: var(--text-heading);
   font-size: 0.9rem;
   line-height: 1.25;
 }
 
 .calendar-event-outlook {
-  background: #e8f5f5;
-  border-left-color: #2d6a73;
+  background: var(--calendar-outlook-bg);
+  border-left-color: var(--calendar-outlook-border);
 }
 
 .calendar-event-focus {
-  background: #eaf0ff;
-  border-left-color: #4267c2;
+  background: var(--calendar-focus-bg);
+  border-left-color: var(--calendar-focus-border);
 }
 
 .calendar-event-due {
-  background: #fff8e6;
-  border-left-color: #d99b00;
+  background: var(--calendar-due-bg);
+  border-left-color: var(--calendar-due-border);
+}
+
+.calendar-event-work-calendar {
+  background: var(--calendar-work-bg);
+  border-left-color: var(--calendar-work-border);
 }
 
 .calendar-empty {
-  color: #6c7d86;
+  color: var(--text-muted);
   font-size: 0.9rem;
   margin: 0;
 }
@@ -446,6 +535,10 @@ textarea {
   }
 
   .auth-actions {
-  grid-template-columns: 1fr;
+    grid-template-columns: 1fr;
+  }
+
+  .hero-title-row {
+    flex-wrap: wrap;
   }
 }

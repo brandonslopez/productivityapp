@@ -2,5 +2,8 @@
   "name": "focusplanner-api",
   "version": "1.0.0",
   "private": true,
-  "type": "commonjs"
+  "type": "commonjs",
+  "dependencies": {
+    "@azure/communication-sms": "^1.2.0-beta.4"
+  }
 }

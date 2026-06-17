@@ -1,0 +1,32 @@
+.settings-modal {
+  max-width: 560px;
+}
+
+.settings-form {
+  display: grid;
+  gap: 20px;
+}
+
+.settings-section {
+  border: 1px solid var(--border, rgba(27, 60, 83, 0.12));
+  border-radius: 16px;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.settings-section legend {
+  font-weight: 800;
+  padding: 0 6px;
+}
+
+.settings-section label {
+  display: grid;
+  gap: 4px;
+}
+
+.settings-help {
+  color: var(--text-muted, #536b76);
+  font-size: 0.88rem;
+  margin: 0;
+}

@@ -1,0 +1,15 @@
+.dark-mode-toggle {
+  background: var(--surface-alt, #e8f5f5);
+  border: 1px solid var(--border, rgba(27, 60, 83, 0.12));
+  border-radius: 999px;
+  color: var(--text, #20313a);
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 8px 12px;
+  transition: background 0.2s;
+}
+
+.dark-mode-toggle:hover {
+  background: var(--surface-hover, #d9eeee);
+}
