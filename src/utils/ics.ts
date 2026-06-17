@@ -45,14 +45,16 @@ export function downloadCalendarBlock(task: TodoTask) {
   URL.revokeObjectURL(url)
 }
 
-export function parseIcsFeed(icsText: string): Array<{ uid: string; summary: string; start: Date; end: Date }> {
-  const events: Array<{ uid: string; summary: string; start: Date; end: Date }> = []
+export function parseIcsFeed(icsText: string): Array<{ uid: string; summary: string; start: Date; end: Date; isAllDay: boolean }> {
+  const events: Array<{ uid: string; summary: string; start: Date; end: Date; isAllDay: boolean }> = []
   const lines = icsText.replace(/\r\n /g, '').split(/\r?\n/)
   let inEvent = false
   let uid = ''
   let summary = ''
   let dtstart = ''
   let dtend = ''
+  let transp = ''
+  let busyStatus = ''
 
   for (const line of lines) {
     if (line === 'BEGIN:VEVENT') {
@@ -61,13 +63,22 @@ export function parseIcsFeed(icsText: string): Array<{ uid: string; summary: str
       summary = ''
       dtstart = ''
       dtend = ''
+      transp = ''
+      busyStatus = ''
     } else if (line === 'END:VEVENT' && inEvent) {
       inEvent = false
       if (dtstart && dtend) {
+        // Skip free/transparent events
+        if (transp === 'TRANSPARENT' || busyStatus === 'FREE') continue
+
         const start = parseIcsDateTime(dtstart)
         const end = parseIcsDateTime(dtend)
         if (start && end) {
-          events.push({ uid: uid || crypto.randomUUID(), summary: summary || 'Busy', start, end })
+          // Detect all-day events (date-only format with no time component)
+          const isAllDay = /^\d{8}$/.test(dtstart)
+          // Skip all-day events — they don't represent actual busy time
+          if (isAllDay) continue
+          events.push({ uid: uid || crypto.randomUUID(), summary: summary || 'Busy', start, end, isAllDay })
         }
       }
     } else if (inEvent) {
@@ -81,9 +92,18 @@ export function parseIcsFeed(icsText: string): Array<{ uid: string; summary: str
       else if (key === 'SUMMARY') summary = value
       else if (key === 'DTSTART') dtstart = value
       else if (key === 'DTEND') dtend = value
+      else if (key === 'TRANSP') transp = value
+      else if (key === 'X-MICROSOFT-CDO-BUSYSTATUS') busyStatus = value
       // Handle TZID parameters (e.g., DTSTART;TZID=Eastern Standard Time:20250615T140000)
-      else if (fullKey.startsWith('DTSTART;')) dtstart = value
-      else if (fullKey.startsWith('DTEND;')) dtend = value
+      else if (fullKey.startsWith('DTSTART;')) {
+        dtstart = value
+        // Check for VALUE=DATE (all-day)
+        if (fullKey.includes('VALUE=DATE')) dtstart = value
+      }
+      else if (fullKey.startsWith('DTEND;')) {
+        dtend = value
+        if (fullKey.includes('VALUE=DATE')) dtend = value
+      }
     }
   }
 

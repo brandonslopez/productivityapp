@@ -97,6 +97,7 @@ export type GraphCalendarEvent = {
   subject?: string
   showAs?: string
   isCancelled?: boolean
+  isAllDay?: boolean
   start?: { dateTime?: string }
   end?: { dateTime?: string }
 }

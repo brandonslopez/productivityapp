@@ -63,7 +63,7 @@ export function useCalendar(
         const query = new URLSearchParams({
           startDateTime: now.toISOString(),
           endDateTime: rangeEnd.toISOString(),
-          $select: 'id,subject,start,end,showAs,isCancelled',
+          $select: 'id,subject,start,end,showAs,isCancelled,isAllDay',
           $top: '100',
         })
         let nextUrl: string | undefined = `/me/calendarView?${query.toString()}`
@@ -74,6 +74,7 @@ export function useCalendar(
             if (
               event.isCancelled ||
               event.showAs === 'free' ||
+              event.isAllDay ||
               !event.id ||
               !event.start?.dateTime ||
               !event.end?.dateTime
