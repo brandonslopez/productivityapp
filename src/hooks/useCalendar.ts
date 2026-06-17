@@ -10,6 +10,7 @@ export function useCalendar(
   account: AccountInfo | null,
   graphRequest: GraphRequestFn,
   workCalendarIcsUrl: string,
+  tasks: TodoTask[] = [],
 ) {
   const [calendarBusyBlocks, setCalendarBusyBlocks] = useState<CalendarBusyBlock[]>([])
   const [calendarMessage, setCalendarMessage] = useState('')
@@ -150,12 +151,12 @@ export function useCalendar(
   const createDueDateEvent = useCallback(async (task: TodoTask) => {
     if (!task.dueDate || task.dueEventId) return null
     setCalendarMessage(`Adding due-date reminder for "${task.title}" to Outlook...`)
-    const { start, end } = toDueEventWindow(task.dueDate)
+    const { start, end } = toDueEventWindow(task.dueDate, calendarBusyBlocks, tasks)
     const dueEventId = await createCalendarEvent(task, `Due: ${task.title}`, start, end, 'due')
     setCalendarMessage(`Added due-date reminder for "${task.title}" to Outlook.`)
     await refreshCalendar()
     return dueEventId
-  }, [createCalendarEvent, refreshCalendar])
+  }, [createCalendarEvent, refreshCalendar, calendarBusyBlocks, tasks])
 
   return {
     calendarBusyBlocks,

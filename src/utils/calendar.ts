@@ -17,12 +17,6 @@ export function isSameDay(first: Date, second: Date) {
   return startOfDay(first).getTime() === startOfDay(second).getTime()
 }
 
-function combineDateAndHour(date: Date, hour: number) {
-  const d = new Date(date)
-  d.setHours(hour, 0, 0, 0)
-  return d
-}
-
 function isWeekend(date: Date) {
   return date.getDay() === 0 || date.getDay() === 6
 }
@@ -57,18 +51,22 @@ export function getScheduleSuggestions(
 ): SuggestedSlot[] {
   const suggestions: SuggestedSlot[] = []
   const now = new Date()
-  const dueDate = task.dueDate ? new Date(`${task.dueDate}T17:00:00`) : new Date(now)
+  const dueDate = task.dueDate ? new Date(`${task.dueDate}T17:00:00`) : addDays(now, 14)
   const durationMinutes = getEstimatedMinutes(task, tasks)
-  const workHours = [9, 11, 14, 16]
+  const WORK_START = 9
+  const WORK_END = 17
+  const SLOT_INCREMENT = 30 // scan in 30-minute steps
 
-  for (let dayOffset = 0; dayOffset < 14 && suggestions.length < 3; dayOffset += 1) {
+  for (let dayOffset = 0; dayOffset < 14 && suggestions.length < 5; dayOffset += 1) {
     const candidateDate = new Date(now)
     candidateDate.setDate(now.getDate() + dayOffset)
 
     if (isWeekend(candidateDate) || candidateDate > dueDate) continue
 
-    for (const hour of workHours) {
-      const start = combineDateAndHour(candidateDate, hour)
+    // Scan every 30-minute slot within work hours
+    for (let minutes = WORK_START * 60; minutes + durationMinutes <= WORK_END * 60; minutes += SLOT_INCREMENT) {
+      const start = new Date(candidateDate)
+      start.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0)
       const end = new Date(start.getTime() + durationMinutes * 60 * 1000)
 
       if (
@@ -86,7 +84,7 @@ export function getScheduleSuggestions(
         end,
       })
 
-      if (suggestions.length === 3) break
+      if (suggestions.length === 5) break
     }
   }
 
@@ -97,9 +95,24 @@ export function toGraphUtcDateTime(date: Date) {
   return date.toISOString().replace(/\.\d{3}Z$/, '')
 }
 
-export function toDueEventWindow(dueDate: string) {
+export function toDueEventWindow(dueDate: string, busyBlocks: CalendarBusyBlock[] = [], tasks: TodoTask[] = []) {
+  const dueDateObj = new Date(`${dueDate}T17:00:00`)
+  const REMINDER_DURATION = 30 // 30-minute reminder block
+
+  // Try to find a free 30-minute slot on the due date, working backwards from 5pm
+  for (let minutes = 16 * 60; minutes >= 9 * 60; minutes -= 30) {
+    const start = new Date(dueDateObj)
+    start.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0)
+    const end = new Date(start.getTime() + REMINDER_DURATION * 60 * 1000)
+
+    if (!overlapsBusyBlock(start, end, busyBlocks) && !overlapsExistingTask(start, end, tasks)) {
+      return { start, end }
+    }
+  }
+
+  // Fallback: end-of-day on the due date
   const start = new Date(`${dueDate}T16:30:00`)
-  const end = new Date(start.getTime() + 30 * 60 * 1000)
+  const end = new Date(start.getTime() + REMINDER_DURATION * 60 * 1000)
   return { start, end }
 }
 
@@ -135,7 +148,7 @@ export function getCalendarViewItems(
     }
 
     if (task.dueDate) {
-      const { start, end } = toDueEventWindow(task.dueDate)
+      const { start, end } = toDueEventWindow(task.dueDate, busyBlocks, tasks)
       if (task.dueEventId) taskEventIds.add(task.dueEventId)
       items.push({
         id: task.dueEventId ?? `${task.id}-due`,
