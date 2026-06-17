@@ -2,56 +2,41 @@
 
 ## Purpose
 
-The AI layer should help estimate, schedule, and break down todos while keeping the user in control of external actions.
+The AI layer helps estimate task duration and break down work into smaller steps, keeping the user in full control of all external actions.
 
 ## Agent responsibilities
 
 The agent can:
 
 - Analyze todo descriptions, blockers, and due dates.
-- Ask clarifying questions when the task is ambiguous.
-- Propose smaller steps.
-- Prepare research queries.
-- Summarize Microsoft Learn resources.
-- Suggest SMEs or stakeholder contacts.
-- Draft Word-document outlines.
-- Draft stakeholder updates.
-- Suggest reminders and Outlook time blocks.
+- Propose smaller actionable steps.
+- Estimate task duration based on context and historical data.
+- Provide rationale for its estimates.
 
 ## Approval boundaries
 
 The agent must ask before it:
 
-- Sends an email.
+- Sends an email or SMS.
 - Schedules or changes a meeting.
 - Creates or changes an Outlook calendar event.
-- Contacts an SME or stakeholder.
+- Contacts a stakeholder.
 - Changes a deadline.
 - Marks a task complete.
 
-## Agent modes
-
-| Mode | Output |
-|---|---|
-| Think | Outcome, assumptions, risks, next visible action |
-| Plan | Smaller steps, order, deadline suggestions |
-| Research | Search terms, candidate sources, resource summary |
-| Draft | Word doc outline, email draft, update blurb |
-| Prepare | Calendar block suggestion, reminder, approval checklist |
-
 ## Human-in-the-loop rule
 
-The agent may prepare work products automatically, but all communication and calendar actions require explicit approval.
+The agent may prepare work products automatically (estimates, subtasks, rationale), but all communication and calendar actions require explicit user approval. AI suggestions populate draft fields that the user reviews before saving.
 
 ## Current implementation
 
-The app keeps local deterministic time estimates and calendar suggestions, then optionally calls a server-side Azure Static Web Apps API endpoint. The endpoint sends the draft todo plus recent completed-task timing examples to Azure AI and returns structured JSON:
+The app calls a server-side Azure Functions API endpoint (`/api/task-assistant`). The endpoint sends the draft todo plus recent completed-task timing examples to Azure OpenAI (GPT-4o) and returns structured JSON:
 
 ```json
 {
   "estimatedMinutes": 45,
-  "subtasks": ["string"],
-  "rationale": "string"
+  "subtasks": ["Research existing solutions", "Draft proposal", "Review with stakeholder"],
+  "rationale": "Based on similar research tasks that averaged 40-50 minutes..."
 }
 ```
 
@@ -59,20 +44,26 @@ The frontend applies the estimate to the anticipated time field and writes the s
 
 ## Server-side AI boundary
 
-Azure AI credentials must stay in Static Web Apps API application settings:
+Azure AI credentials are stored exclusively in Static Web Apps API application settings:
 
 ```text
-AZURE_AI_ENDPOINT
-AZURE_AI_API_KEY
-AZURE_AI_DEPLOYMENT
-AZURE_AI_API_VERSION
+AZURE_AI_ENDPOINT       → Azure OpenAI resource endpoint
+AZURE_AI_API_KEY        → Azure OpenAI API key
+AZURE_AI_DEPLOYMENT     → Model deployment name (e.g., gpt-4o)
+AZURE_AI_API_VERSION    → API version (e.g., 2024-10-21)
 ```
 
-Do not put Azure AI keys in Vite variables because those values are bundled into browser JavaScript.
+These values are never exposed to the browser. The Vite build does not have access to them.
 
-## Future structured output
+## Error handling
 
-Future modes can extend the API response after user approval:
+- If Azure AI is not configured, the app shows an informational message and falls back to local duration estimates from completed tasks.
+- Network failures display a toast notification and do not block task creation.
+- AI suggestions are always optional — the user can save tasks without waiting for AI.
+
+## Future extensions
+
+Future modes can extend the API response:
 
 ```json
 {
@@ -80,7 +71,8 @@ Future modes can extend the API response after user approval:
   "questions": ["string"],
   "calendarSuggestions": ["ISO datetime string"],
   "researchQueries": ["string"],
-  "emailDraft": "string",
   "approvalRequired": ["string"]
 }
 ```
+
+All extensions that take external action will require explicit user approval before execution.

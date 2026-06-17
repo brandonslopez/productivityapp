@@ -85,7 +85,7 @@ module.exports = async function taskAssistant(context, req) {
           {
             role: 'system',
             content:
-              'You help a product manager with ADHD estimate task duration and split work into small concrete steps. Respond only with valid JSON matching this shape: {"estimatedMinutes": number, "subtasks": string[], "rationale": string}. Keep subtasks action-oriented, specific, and short. Estimate realistic focused-work minutes, not calendar elapsed time.',
+              'You help a product manager estimate task duration and split work into small concrete steps. Respond only with valid JSON matching this shape: {"estimatedMinutes": number, "subtasks": string[], "rationale": string}. Keep subtasks action-oriented, specific, and short. Estimate realistic focused-work minutes, not calendar elapsed time.',
           },
           {
             role: 'user',

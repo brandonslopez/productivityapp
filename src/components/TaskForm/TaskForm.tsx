@@ -131,7 +131,7 @@ export function TaskForm({
         <div className="ai-assistant-card">
           <div>
             <strong>Azure AI estimate and breakdown</strong>
-            <p>Send the title, notes, blockers, and your completed-task timing examples to Azure AI for a duration estimate and ADHD-friendly next steps.</p>
+            <p>Send the title, notes, blockers, and your completed-task timing examples to Azure AI for a duration estimate and actionable next steps.</p>
           </div>
           <button className="secondary-button" disabled={isSuggestingWithAi} onClick={onRequestAi} type="button">
             {isSuggestingWithAi ? 'Asking Azure AI...' : 'Ask Azure AI to estimate and split'}

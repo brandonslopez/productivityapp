@@ -158,7 +158,7 @@ export const initialTasks: TodoTask[] = [
       { id: 'step-sample-prioritize', title: 'Pick the top three focus blocks', done: false },
       { id: 'step-sample-schedule', title: 'Schedule protected calendar time', done: false },
     ],
-    aiEstimateRationale: 'Sample ADHD-friendly breakdown.',
+    aiEstimateRationale: 'Sample AI-generated breakdown.',
     createdAt: new Date().toISOString(),
     tags: ['planning'],
     category: 'Work',
